@@ -21,8 +21,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Hydrise Hydraulics — Precision Chrome Plating',
-  description: 'Expert hard chrome plating and hydraulic rod reconditioning. Restore worn components to OEM specs with micron-level precision.',
+  title: 'Hydrise Hydraulics',
+  description: 'Hard chrome plating, hydraulic cylinder manufacturing & reconditioning, power packs, and thermal spraying. Based in Autonagar, Visakhapatnam.',
   generator: 'v0.app',
 }
 
