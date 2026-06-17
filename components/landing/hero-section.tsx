@@ -66,9 +66,9 @@ export function HeroSection() {
         {/* Description + CTAs */}
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-end">
           <p className={`text-xl lg:text-2xl text-muted-foreground leading-relaxed max-w-lg transition-all duration-700 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            Specialising in hard chrome plating, hydraulic cylinder
-            manufacturing &amp; reconditioning, power packs, and thermal
-            spraying — from our works in Autonagar, Visakhapatnam.
+            Hard chrome plating specialists — piston rod reconditioning,
+            hydraulic cylinder repair, and precision surface finishing.
+            Based in Autonagar, Visakhapatnam.
           </p>
 
           <div className={`flex flex-col sm:flex-row justify-start lg:justify-end gap-4 transition-all duration-700 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>

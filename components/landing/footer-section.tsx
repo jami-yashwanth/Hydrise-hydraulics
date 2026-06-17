@@ -6,8 +6,7 @@ const footerLinks = {
   Services: [
     { name: "Hard Chrome Plating", href: "#services" },
     { name: "Piston Rod Reconditioning", href: "#services" },
-    { name: "Cylinder Repair & Rebuild", href: "#services" },
-    { name: "New Rod Manufacture", href: "#services" },
+    { name: "Hydraulic Cylinder Repair", href: "#services" },
   ],
   Company: [
     { name: "Our Process", href: "#process" },
@@ -34,8 +33,8 @@ export function FooterSection() {
                 <span className="text-xs text-muted-foreground font-mono">Hydraulics</span>
               </a>
               <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-xs">
-                Hard chrome plating, hydraulic cylinder manufacturing &amp;
-                reconditioning, power packs, and thermal spraying.
+                Hard chrome plating specialists. Piston rod reconditioning
+                and hydraulic cylinder repair.
                 Gajuwaka, Visakhapatnam.
               </p>
               <div className="space-y-1.5">

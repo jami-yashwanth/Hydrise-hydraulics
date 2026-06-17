@@ -7,29 +7,22 @@ const services = [
     number: "01",
     title: "Hard Chrome Plating",
     description:
-      "Our core specialisation. Electrodeposited hard chrome coating reaching 65–70 HRC surface hardness — exceptional wear resistance, corrosion protection, and low-friction performance for hydraulic rods, shafts, and plungers under continuous load.",
+      "Electrodeposited hard chrome coating reaching 65–70 HRC surface hardness. Exceptional wear resistance, corrosion protection, and low-friction performance — essential for hydraulic rods, shafts, and plungers operating under continuous load and high-pressure cycling.",
     tags: ["Piston Rods", "Valve Spools", "Plungers", "Shafts"],
   },
   {
     number: "02",
-    title: "Hydraulic Cylinder Manufacturing & Reconditioning",
+    title: "Piston Rod Reconditioning",
     description:
-      "New hydraulic cylinders built to drawing, and worn cylinders fully reconditioned. Bore honing, seal replacement, rod re-plating, and pressure testing — all in-house. We restore cylinders to original operating pressure without the cost or lead time of new procurement.",
-    tags: ["New Manufacture", "Full Rebuild", "Bore Honing", "Pressure Testing"],
+      "Worn, scored, or pitted rods stripped back to bare metal, pre-machined to remove all surface defects, re-plated with hard chrome, and precision ground to original OEM diameter. Most rods can be reconditioned multiple times — delivering near-new performance at up to 70% less than replacement cost.",
+    tags: ["Chrome Stripping", "Re-plating", "OEM Tolerances", "Faster Than New"],
   },
   {
     number: "03",
-    title: "Hydraulic Power Packs",
+    title: "Hydraulic Cylinder Repair",
     description:
-      "Design, fabrication, and repair of hydraulic power pack units — reservoir, pump, valve block, and controls assembled and tested as a complete system. Custom configurations for industrial machinery and mobile equipment.",
-    tags: ["Custom Design", "Pump & Valve", "Control Systems", "Full Assembly"],
-  },
-  {
-    number: "04",
-    title: "Thermal Spraying & Engineering Works",
-    description:
-      "Thermal spray coating for components requiring surface build-up, corrosion protection, or wear resistance where chrome plating is not suited. General engineering works including fabrication, machining, and repair across a wide range of industrial components.",
-    tags: ["Thermal Spray", "Surface Build-up", "Fabrication", "General Engineering"],
+      "Full cylinder teardown, bore honing, new seal fitment, rod re-chroming, and reassembly. We restore leaking or damaged cylinders to original operating pressure — without the lead time or cost of a new unit.",
+    tags: ["Bore Honing", "Seal Replacement", "Rod Re-chrome", "Pressure Testing"],
   },
 ];
 
