@@ -4,39 +4,64 @@ import { useEffect, useRef, useState } from "react";
 
 const steps = [
   {
-    number: "I",
-    title: "Connect your tools",
-    description: "Integrate with your existing stack in minutes. We support 200+ data sources out of the box.",
-    code: `import { optimus } from '@optimus/core'
-
-optimus.connect({
-  source: 'your-database',
-  sync: true
-})`,
+    number: "01",
+    title: "Intake & Inspection",
+    description:
+      "Every component is measured and assessed on arrival. We check existing chrome thickness, map surface defects, and confirm the repair path — reconditioning or new manufacture.",
+    specs: [
+      { label: "Dimensional check", value: "Against OEM drawing or sample" },
+      { label: "Surface mapping", value: "Wear, scoring, pitting, corrosion" },
+      { label: "Chrome thickness", value: "Measured if previously plated" },
+      { label: "Report", value: "Written assessment before we proceed" },
+    ],
   },
   {
-    number: "II",
-    title: "Build your workflow",
-    description: "Design powerful automations with our visual builder or write code directly.",
-    code: `optimus.workflow('process', {
-  trigger: 'event',
-  actions: [
-    'validate',
-    'transform', 
-    'deliver'
-  ]
-})`,
+    number: "02",
+    title: "Chrome Stripping & Prep",
+    description:
+      "Old chrome is removed via reverse electrolysis. The base metal is degreased, cleaned, and pre-ground to eliminate all surface defects before any new coating is applied.",
+    specs: [
+      { label: "Stripping method", value: "Reverse electrolysis — substrate safe" },
+      { label: "Cleaning", value: "Alkaline degrease + ultrasonic" },
+      { label: "Pre-grinding", value: "Removes pits, scores, and corrosion" },
+      { label: "Masking", value: "Precision masking for selective areas" },
+    ],
   },
   {
-    number: "III",
-    title: "Ship to production",
-    description: "Deploy globally with zero configuration. Your app goes live in under 30 seconds.",
-    code: `optimus.deploy({
-  target: 'production',
-  regions: 'auto'
-})
-
-// Deployed to 12 regions`,
+    number: "03",
+    title: "Hard Chrome Electroplating",
+    description:
+      "Components are plated in a temperature-controlled chrome bath at controlled current density. Plating thickness is built to accommodate final grinding and deliver the specified finish dimension.",
+    specs: [
+      { label: "Hardness", value: "65–70 HRC post-deposition" },
+      { label: "Plating buildup", value: "0.10–0.50mm typical" },
+      { label: "Bath control", value: "Temperature & current monitored" },
+      { label: "Type", value: "Hard industrial chrome — not decorative" },
+    ],
+  },
+  {
+    number: "04",
+    title: "Precision Grinding",
+    description:
+      "After plating, each rod is CNC cylindrically ground to final diameter. We hold ±5 micron on standard jobs and can work to tighter tolerances on request.",
+    specs: [
+      { label: "Method", value: "CNC cylindrical grinding" },
+      { label: "Diameter tolerance", value: "±5μm standard" },
+      { label: "Surface finish", value: "Ra ≤ 0.4μm" },
+      { label: "Straightness", value: "Verified post-grind" },
+    ],
+  },
+  {
+    number: "05",
+    title: "Final Inspection & Dispatch",
+    description:
+      "Hardness, dimensional, and surface finish checks before any component leaves our floor. Every job ships with a quality certificate documenting the measurements.",
+    specs: [
+      { label: "Hardness test", value: "Rockwell HRC" },
+      { label: "Dimensional report", value: "Final measurements recorded" },
+      { label: "Surface finish check", value: "Profilometer verified" },
+      { label: "Documentation", value: "Quality certificate with every job" },
+    ],
   },
 ];
 
@@ -47,12 +72,9 @@ export function HowItWorksSection() {
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setIsVisible(true);
-      },
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
       { threshold: 0.1 }
     );
-
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
@@ -66,73 +88,67 @@ export function HowItWorksSection() {
 
   return (
     <section
-      id="how-it-works"
+      id="process"
       ref={sectionRef}
       className="relative py-24 lg:py-32 bg-foreground text-background overflow-hidden"
     >
-      {/* Diagonal lines pattern */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `repeating-linear-gradient(
-            -45deg,
-            transparent,
-            transparent 40px,
-            currentColor 40px,
-            currentColor 41px
-          )`
-        }} />
-      </div>
+      <div className="absolute inset-0 opacity-[0.025] pointer-events-none"
+        style={{
+          backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 40px, currentColor 40px, currentColor 41px)`,
+        }}
+      />
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">
         {/* Header */}
-        <div className="mb-16 lg:mb-24">
-          <span className="inline-flex items-center gap-3 text-sm font-mono text-background/50 mb-6">
-            <span className="w-8 h-px bg-background/30" />
-            Process
-          </span>
-          <h2
-            className={`text-4xl lg:text-6xl font-display tracking-tight transition-all duration-700 ${
+        <div className="grid lg:grid-cols-12 gap-8 mb-16 lg:mb-24">
+          <div className="lg:col-span-5">
+            <span className="inline-flex items-center gap-3 text-sm font-mono text-background/40 mb-6">
+              <span className="w-8 h-px bg-background/30" />
+              Process
+            </span>
+            <h2 className={`text-4xl lg:text-5xl font-display tracking-tight transition-all duration-700 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-          >
-            Three steps.
-            <br />
-            <span className="text-background/50">Infinite possibilities.</span>
-          </h2>
+            }`}>
+              How we work.
+            </h2>
+          </div>
+          <div className="lg:col-span-7 lg:flex lg:items-end">
+            <p className={`text-background/55 leading-relaxed text-lg transition-all duration-700 delay-100 ${
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}>
+              A disciplined, five-stage process — from the moment a component
+              arrives to the moment it leaves, every step is documented and
+              inspected.
+            </p>
+          </div>
         </div>
 
-        {/* Main content */}
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
-          {/* Steps */}
-          <div className="space-y-0">
+        {/* Content */}
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
+          {/* Steps list */}
+          <div>
             {steps.map((step, index) => (
               <button
                 key={step.number}
                 type="button"
                 onClick={() => setActiveStep(index)}
-                className={`w-full text-left py-8 border-b border-background/10 transition-all duration-500 group ${
-                  activeStep === index ? "opacity-100" : "opacity-40 hover:opacity-70"
+                className={`w-full text-left py-7 border-b border-background/10 transition-all duration-400 group ${
+                  activeStep === index ? "opacity-100" : "opacity-35 hover:opacity-60"
                 }`}
               >
                 <div className="flex items-start gap-6">
-                  <span className="font-display text-3xl text-background/30">{step.number}</span>
+                  <span className="font-mono text-sm text-background/30 mt-1 shrink-0">{step.number}</span>
                   <div className="flex-1">
-                    <h3 className="text-2xl lg:text-3xl font-display mb-3 group-hover:translate-x-2 transition-transform duration-300">
+                    <h3 className="text-xl lg:text-2xl font-display mb-2">
                       {step.title}
                     </h3>
-                    <p className="text-background/60 leading-relaxed">
+                    <p className="text-background/50 text-sm leading-relaxed">
                       {step.description}
                     </p>
-                    
-                    {/* Progress indicator */}
                     {activeStep === index && (
-                      <div className="mt-4 h-px bg-background/20 overflow-hidden">
-                        <div 
-                          className="h-full bg-background w-0"
-                          style={{
-                            animation: 'progress 5s linear forwards'
-                          }}
-                        />
+                      <div className="mt-5 h-px bg-background/15 overflow-hidden">
+                        <div className="h-full bg-background/60 w-0"
+                          style={{ animation: "progress 5s linear forwards" }} />
                       </div>
                     )}
                   </div>
@@ -141,53 +157,41 @@ export function HowItWorksSection() {
             ))}
           </div>
 
-          {/* Code display */}
-          <div className="lg:sticky lg:top-32 self-start">
-            <div className="border border-background/10 overflow-hidden">
-              {/* Window header */}
+          {/* Spec panel */}
+          <div className="lg:sticky lg:top-28 self-start">
+            <div className="border border-background/15">
+              {/* Label row */}
               <div className="px-6 py-4 border-b border-background/10 flex items-center justify-between">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-background/20" />
-                  <div className="w-3 h-3 rounded-full bg-background/20" />
-                  <div className="w-3 h-3 rounded-full bg-background/20" />
-                </div>
-                <span className="text-xs font-mono text-background/40">workflow.ts</span>
+                <span className="text-xs font-mono text-background/35 uppercase tracking-widest">
+                  Step {steps[activeStep].number}
+                </span>
+                <span className="text-xs font-mono text-background/35">
+                  {steps[activeStep].title}
+                </span>
               </div>
 
-              {/* Code content */}
-              <div className="p-8 font-mono text-sm min-h-[280px]">
-                <pre className="text-background/70">
-                  {steps[activeStep].code.split('\n').map((line, lineIndex) => (
-                    <div 
-                      key={`${activeStep}-${lineIndex}`} 
-                      className="leading-loose code-line-reveal"
-                      style={{ 
-                        animationDelay: `${lineIndex * 80}ms`,
-                      }}
-                    >
-                      <span className="text-background/20 select-none w-8 inline-block">{lineIndex + 1}</span>
-                      <span className="inline-flex">
-                        {line.split('').map((char, charIndex) => (
-                          <span
-                            key={`${activeStep}-${lineIndex}-${charIndex}`}
-                            className="code-char-reveal"
-                            style={{
-                              animationDelay: `${lineIndex * 80 + charIndex * 15}ms`,
-                            }}
-                          >
-                            {char === ' ' ? '\u00A0' : char}
-                          </span>
-                        ))}
-                      </span>
-                    </div>
-                  ))}
-                </pre>
+              {/* Spec table */}
+              <div className="divide-y divide-background/8">
+                {steps[activeStep].specs.map((spec, i) => (
+                  <div
+                    key={`${activeStep}-${i}`}
+                    className="px-6 py-5 grid grid-cols-2 gap-4 spec-row-reveal"
+                    style={{ animationDelay: `${i * 70}ms` }}
+                  >
+                    <span className="text-xs font-mono text-background/35 uppercase tracking-wider self-center">
+                      {spec.label}
+                    </span>
+                    <span className="text-sm text-background/75 leading-snug">
+                      {spec.value}
+                    </span>
+                  </div>
+                ))}
               </div>
 
-              {/* Status */}
+              {/* Footer */}
               <div className="px-6 py-4 border-t border-background/10 flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs font-mono text-background/40">Ready</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                <span className="text-xs font-mono text-background/35">ISO-compliant process</span>
               </div>
             </div>
           </div>
@@ -199,31 +203,13 @@ export function HowItWorksSection() {
           from { width: 0%; }
           to { width: 100%; }
         }
-        
-        .code-line-reveal {
+        .spec-row-reveal {
           opacity: 0;
-          transform: translateX(-8px);
-          animation: lineReveal 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          transform: translateY(6px);
+          animation: specReveal 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
-        
-        @keyframes lineReveal {
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        .code-char-reveal {
-          opacity: 0;
-          filter: blur(8px);
-          animation: charReveal 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-        
-        @keyframes charReveal {
-          to {
-            opacity: 1;
-            filter: blur(0);
-          }
+        @keyframes specReveal {
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </section>

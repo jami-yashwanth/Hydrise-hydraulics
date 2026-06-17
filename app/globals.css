@@ -88,6 +88,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  button, a[href] {
+    cursor: pointer;
+  }
   html {
     scroll-behavior: smooth;
   }

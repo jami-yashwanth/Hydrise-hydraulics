@@ -21,8 +21,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Optimus - Platform to Create',
-  description: 'The creative platform for teams who ship. Build, deploy, and scale with unprecedented velocity.',
+  title: 'Hydrise Hydraulics — Precision Chrome Plating',
+  description: 'Expert hard chrome plating and hydraulic rod reconditioning. Restore worn components to OEM specs with micron-level precision.',
   generator: 'v0.app',
 }
 
