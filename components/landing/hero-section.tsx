@@ -66,9 +66,8 @@ export function HeroSection() {
         {/* Description + CTAs */}
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-end">
           <p className={`text-xl lg:text-2xl text-muted-foreground leading-relaxed max-w-lg transition-all duration-700 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            We apply hard chrome electroplating to hydraulic piston rods,
-            cylinder shafts, valve spools, and industrial components —
-            restoring worn surfaces to OEM specification. Autonagar, Visakhapatnam.
+            Hard chrome plating for hydraulic and industrial components.
+            Wear-resistant, precision-finished surfaces — built to last.
           </p>
 
           <div className={`flex flex-col sm:flex-row justify-start lg:justify-end gap-4 transition-all duration-700 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>

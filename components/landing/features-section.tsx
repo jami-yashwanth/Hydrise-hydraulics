@@ -4,29 +4,14 @@ import { useEffect, useRef, useState } from "react";
 
 const services = [
   {
-    number: "01",
     title: "Hard Chrome Plating",
     description:
       "Electrodeposited hard chrome coating reaching 65–70 HRC surface hardness. Exceptional wear resistance, corrosion protection, and low-friction performance — applied to hydraulic piston rods, cylinder shafts, valve spools, plungers, and industrial components of all sizes.",
     tags: ["Piston Rods", "Cylinder Shafts", "Valve Spools", "Plungers", "Industrial Shafts"],
   },
-  {
-    number: "02",
-    title: "Chrome Stripping & Re-plating",
-    description:
-      "Worn, scored, or pitted components stripped of old chrome via reverse electrolysis, pre-machined to remove all surface defects, and re-plated to original OEM dimension. The substrate is never compromised — most components can be re-plated multiple times.",
-    tags: ["Reverse Electrolysis", "Surface Prep", "Re-plating", "OEM Dimension"],
-  },
-  {
-    number: "03",
-    title: "Precision Grinding & Finishing",
-    description:
-      "Every chrome-plated component is CNC cylindrically ground to final diameter within ±5 microns and polished to Ra ≤ 0.4μm surface finish. A consistent, seal-friendly surface that extends the life of every hydraulic seal it contacts.",
-    tags: ["CNC Grinding", "±5μm Tolerance", "Ra ≤ 0.4μm", "Seal-Ready Finish"],
-  },
 ];
 
-function ServiceCard({ service, index }: { service: typeof services[0]; index: number }) {
+function ServiceCard({ service }: { service: typeof services[0] }) {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -45,16 +30,10 @@ function ServiceCard({ service, index }: { service: typeof services[0]; index: n
       className={`group border-b border-foreground/10 py-10 lg:py-14 transition-all duration-700 ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
-      style={{ transitionDelay: `${index * 80}ms` }}
     >
       <div className="grid lg:grid-cols-12 gap-6 lg:gap-12">
-        {/* Number */}
-        <div className="lg:col-span-1">
-          <span className="font-mono text-sm text-muted-foreground">{service.number}</span>
-        </div>
-
         {/* Title */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-4">
           <h3 className="text-2xl lg:text-3xl font-display tracking-tight group-hover:translate-x-1 transition-transform duration-300">
             {service.title}
           </h3>
@@ -117,7 +96,7 @@ export function FeaturesSection() {
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}>
               Hard chrome plating is what we do — from initial surface
-              preparation through electroplating to precision grinding.
+              preparation through electroplating to final finishing.
               Every component leaves meeting OEM specification.
             </p>
           </div>
@@ -125,8 +104,8 @@ export function FeaturesSection() {
 
         {/* Service rows */}
         <div>
-          {services.map((service, index) => (
-            <ServiceCard key={service.number} service={service} index={index} />
+          {services.map((service) => (
+            <ServiceCard key={service.title} service={service} />
           ))}
         </div>
       </div>

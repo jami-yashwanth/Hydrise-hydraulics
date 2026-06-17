@@ -5,8 +5,6 @@ import { AnimatedWave } from "./animated-wave";
 const footerLinks = {
   Services: [
     { name: "Hard Chrome Plating", href: "#services" },
-    { name: "Chrome Stripping & Re-plating", href: "#services" },
-    { name: "Precision Grinding & Finishing", href: "#services" },
   ],
   Company: [
     { name: "Our Process", href: "#process" },
