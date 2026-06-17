@@ -7,8 +7,22 @@ const services = [
     number: "01",
     title: "Hard Chrome Plating",
     description:
-      "Electrodeposited hard chrome coating reaching 65–70 HRC surface hardness. Exceptional wear resistance, corrosion protection, and low-friction performance — essential for hydraulic rods, shafts, and plungers operating under continuous load and high-pressure cycling.",
-    tags: ["Piston Rods", "Valve Spools", "Plungers", "Shafts"],
+      "Electrodeposited hard chrome coating reaching 65–70 HRC surface hardness. Exceptional wear resistance, corrosion protection, and low-friction performance — applied to hydraulic piston rods, cylinder shafts, valve spools, plungers, and industrial components of all sizes.",
+    tags: ["Piston Rods", "Cylinder Shafts", "Valve Spools", "Plungers", "Industrial Shafts"],
+  },
+  {
+    number: "02",
+    title: "Chrome Stripping & Re-plating",
+    description:
+      "Worn, scored, or pitted components stripped of old chrome via reverse electrolysis, pre-machined to remove all surface defects, and re-plated to original OEM dimension. The substrate is never compromised — most components can be re-plated multiple times.",
+    tags: ["Reverse Electrolysis", "Surface Prep", "Re-plating", "OEM Dimension"],
+  },
+  {
+    number: "03",
+    title: "Precision Grinding & Finishing",
+    description:
+      "Every chrome-plated component is CNC cylindrically ground to final diameter within ±5 microns and polished to Ra ≤ 0.4μm surface finish. A consistent, seal-friendly surface that extends the life of every hydraulic seal it contacts.",
+    tags: ["CNC Grinding", "±5μm Tolerance", "Ra ≤ 0.4μm", "Seal-Ready Finish"],
   },
 ];
 
@@ -102,9 +116,9 @@ export function FeaturesSection() {
             <p className={`text-lg text-muted-foreground leading-relaxed transition-all duration-700 delay-100 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}>
-              Every service is built around one goal: returning your hydraulic
-              components to full specification — reliably, and without the wait
-              or cost of new procurement.
+              Hard chrome plating is what we do — from initial surface
+              preparation through electroplating to precision grinding.
+              Every component leaves meeting OEM specification.
             </p>
           </div>
         </div>

@@ -4,32 +4,32 @@ import { useEffect, useState } from "react";
 
 const testimonials = [
   {
-    quote: "Every rod comes back to exact drawing dimensions. Our seals last far longer now because the surface finish is consistent — no more premature leaks.",
+    quote: "Every rod comes back to exact drawing dimensions. Our seals last far longer because the chrome finish is so consistent — no more premature leaks.",
     author: "Rajan Mehta",
     role: "Workshop Manager",
     company: "Mehta Construction Equipment",
     metric: "3× longer seal life",
   },
   {
-    quote: "We were facing a 14-week lead time for a replacement cylinder. Hydrise had the rod rechromed and back on site in under two weeks. No contest.",
+    quote: "The chrome plating quality is excellent. We send all our hydraulic rods here — the surface finish and dimensional accuracy are always on spec.",
     author: "Suresh Pillai",
     role: "Maintenance Head",
     company: "Apex Forging Ltd.",
-    metric: "Back on site in 12 days",
+    metric: "Zero rejections in 2 years",
   },
   {
-    quote: "The cost saving is significant — we're reconditioning rods at less than a third of the replacement price. Quality is indistinguishable from new.",
+    quote: "We needed fast turnaround on rechromed rods to keep our machines running. Hydrise delivered on time with perfect finish — exactly what we needed.",
     author: "Anita Krishnan",
     role: "Procurement Manager",
     company: "Southern Agro Industries",
-    metric: "67% cost reduction",
+    metric: "On-time, every time",
   },
   {
-    quote: "Marine environment is brutal on chrome. They understood the specification, applied the right coating, and it has held up through two full seasons offshore.",
+    quote: "Hard chrome plating in a marine environment needs to be right. The coating has held up through two full seasons offshore without any corrosion.",
     author: "Thomas Varghese",
     role: "Technical Director",
     company: "Kerala Marine Works",
-    metric: "Zero failures offshore",
+    metric: "Zero corrosion failures",
   },
 ];
 
@@ -53,7 +53,6 @@ export function TestimonialsSection() {
   return (
     <section className="relative py-28 lg:py-36 border-t border-foreground/10">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-        {/* Label */}
         <div className="flex items-center gap-4 mb-16">
           <span className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
             Client results
@@ -65,7 +64,6 @@ export function TestimonialsSection() {
         </div>
 
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
-          {/* Quote */}
           <div className="lg:col-span-8">
             <blockquote className={`transition-all duration-300 ${isAnimating ? "opacity-0 translate-y-3" : "opacity-100 translate-y-0"}`}>
               <p className="font-display text-3xl md:text-4xl lg:text-5xl leading-[1.15] tracking-tight">
@@ -84,36 +82,29 @@ export function TestimonialsSection() {
             </div>
           </div>
 
-          {/* Metric + dots */}
           <div className="lg:col-span-4 flex flex-col justify-between">
             <div className={`p-7 border border-foreground/10 transition-all duration-300 ${isAnimating ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}>
-              <span className="font-mono text-xs tracking-widest text-muted-foreground uppercase block mb-3">
-                Result
-              </span>
+              <span className="font-mono text-xs tracking-widest text-muted-foreground uppercase block mb-3">Result</span>
               <p className="font-display text-3xl">{active.metric}</p>
             </div>
 
             <div className="flex gap-2 mt-8">
               {testimonials.map((_, idx) => (
-                <button
-                  key={idx}
+                <button key={idx}
                   onClick={() => {
                     setIsAnimating(true);
                     setTimeout(() => { setActiveIndex(idx); setIsAnimating(false); }, 300);
                   }}
-                  className={`h-1.5 transition-all duration-300 ${
-                    idx === activeIndex ? "w-8 bg-foreground" : "w-2 bg-foreground/20 hover:bg-foreground/40"
-                  }`}
+                  className={`h-1.5 transition-all duration-300 ${idx === activeIndex ? "w-8 bg-foreground" : "w-2 bg-foreground/20 hover:bg-foreground/40"}`}
                 />
               ))}
             </div>
           </div>
         </div>
 
-        {/* Client marquee */}
         <div className="mt-20 pt-10 border-t border-foreground/10">
           <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase mb-8 text-center">
-            Trusted by industrial operations across the region
+            Trusted by industrial clients across the region
           </p>
         </div>
       </div>
@@ -126,10 +117,8 @@ export function TestimonialsSection() {
                 "Mehta Construction", "Apex Forging", "Southern Agro", "Kerala Marine Works",
                 "Precision Pumps Ltd.", "Coastal Engineering", "Bharat Heavy Tools", "Indo Mining Corp.",
               ].map((company) => (
-                <span
-                  key={`${setIdx}-${company}`}
-                  className="font-display text-lg md:text-xl text-foreground/25 whitespace-nowrap hover:text-foreground/50 transition-colors duration-300"
-                >
+                <span key={`${setIdx}-${company}`}
+                  className="font-display text-lg md:text-xl text-foreground/25 whitespace-nowrap hover:text-foreground/50 transition-colors duration-300">
                   {company}
                 </span>
               ))}

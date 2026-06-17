@@ -22,11 +22,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'Hydrise Hydraulics',
-  description: 'Hard chrome plating specialists — piston rod reconditioning and hydraulic cylinder repair. Based in Autonagar, Visakhapatnam.',
+  description: 'Hard chrome plating for hydraulic piston rods, cylinder shafts, valve spools, and industrial components. Autonagar, Visakhapatnam. Based in Autonagar, Visakhapatnam.',
   generator: 'v0.app',
   openGraph: {
     title: 'Hydrise Hydraulics',
-    description: 'Hard chrome plating specialists — piston rod reconditioning and hydraulic cylinder repair. Autonagar, Visakhapatnam. Call: +91 77022 03575',
+    description: 'Hard chrome plating for hydraulic piston rods, cylinder shafts, valve spools, and industrial components. Autonagar, Visakhapatnam. Autonagar, Visakhapatnam. Call: +91 77022 03575',
     url: 'https://www.hydrisehydraulics.com',
     siteName: 'Hydrise Hydraulics',
     images: [

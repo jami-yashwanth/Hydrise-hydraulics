@@ -5,8 +5,8 @@ import { AnimatedWave } from "./animated-wave";
 const footerLinks = {
   Services: [
     { name: "Hard Chrome Plating", href: "#services" },
-    { name: "Piston Rod Reconditioning", href: "#services" },
-    { name: "Hydraulic Cylinder Repair", href: "#services" },
+    { name: "Chrome Stripping & Re-plating", href: "#services" },
+    { name: "Precision Grinding & Finishing", href: "#services" },
   ],
   Company: [
     { name: "Our Process", href: "#process" },
@@ -33,9 +33,8 @@ export function FooterSection() {
                 <span className="text-xs text-muted-foreground font-mono">Hydraulics</span>
               </a>
               <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-xs">
-                Hard chrome plating specialists. Piston rod reconditioning
-                and hydraulic cylinder repair.
-                Gajuwaka, Visakhapatnam.
+                Hard chrome plating for hydraulic components and
+                industrial parts. Autonagar, Gajuwaka, Visakhapatnam.
               </p>
               <div className="space-y-1.5">
                 <p className="text-sm font-mono text-muted-foreground">+91 77022 03575</p>
