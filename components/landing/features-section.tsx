@@ -10,20 +10,6 @@ const services = [
       "Electrodeposited hard chrome coating reaching 65–70 HRC surface hardness. Exceptional wear resistance, corrosion protection, and low-friction performance — essential for hydraulic rods, shafts, and plungers operating under continuous load and high-pressure cycling.",
     tags: ["Piston Rods", "Valve Spools", "Plungers", "Shafts"],
   },
-  {
-    number: "02",
-    title: "Piston Rod Reconditioning",
-    description:
-      "Worn, scored, or pitted rods stripped back to bare metal, pre-machined to remove all surface defects, re-plated with hard chrome, and precision ground to original OEM diameter. Most rods can be reconditioned multiple times — delivering near-new performance at up to 70% less than replacement cost.",
-    tags: ["Chrome Stripping", "Re-plating", "OEM Tolerances", "Faster Than New"],
-  },
-  {
-    number: "03",
-    title: "Hydraulic Cylinder Repair",
-    description:
-      "Full cylinder teardown, bore honing, new seal fitment, rod re-chroming, and reassembly. We restore leaking or damaged cylinders to original operating pressure — without the lead time or cost of a new unit.",
-    tags: ["Bore Honing", "Seal Replacement", "Rod Re-chrome", "Pressure Testing"],
-  },
 ];
 
 function ServiceCard({ service, index }: { service: typeof services[0]; index: number }) {
