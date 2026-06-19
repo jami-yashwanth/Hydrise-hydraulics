@@ -1,0 +1,218 @@
+"use server"
+
+import { prisma } from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
+import { GST_CONFIG } from "@/lib/config"
+
+function getFinancialYear(date: Date): string {
+  const month = date.getMonth() + 1
+  const year = date.getFullYear()
+  if (month >= 4) return `${year}-${(year + 1).toString().slice(2)}`
+  return `${year - 1}-${year.toString().slice(2)}`
+}
+
+export async function createInvoice(data: {
+  productionEntryIds: string[]
+  invoiceDate: string
+  customerId: string
+  cgstPercent?: number
+  sgstPercent?: number
+  igstPercent?: number
+}) {
+  const {
+    productionEntryIds, invoiceDate, customerId,
+    cgstPercent = GST_CONFIG.cgstPercent,
+    sgstPercent = GST_CONFIG.sgstPercent,
+    igstPercent = GST_CONFIG.igstPercent,
+  } = data
+
+  const [entries, customer] = await Promise.all([
+    prisma.productionEntry.findMany({
+      where: { id: { in: productionEntryIds }, invoiceId: null },
+    }),
+    prisma.customer.findUniqueOrThrow({ where: { id: customerId } }),
+  ])
+
+  if (entries.length === 0) throw new Error("No valid entries selected")
+
+  const basicAmount = entries.reduce((sum, e) => sum + e.totalCost, 0)
+  const invoiceDateObj = new Date(invoiceDate)
+  const fy = getFinancialYear(invoiceDateObj)
+
+  let cgst = 0, sgst = 0, igst = 0
+  if (customer.taxType === "INTRASTATE") {
+    cgst = parseFloat((basicAmount * cgstPercent / 100).toFixed(2))
+    sgst = parseFloat((basicAmount * sgstPercent / 100).toFixed(2))
+  } else if (customer.taxType === "INTERSTATE") {
+    igst = parseFloat((basicAmount * igstPercent / 100).toFixed(2))
+  }
+  const totalAmount = parseFloat((basicAmount + cgst + sgst + igst).toFixed(2))
+
+  const count = await prisma.invoice.count({ where: { financialYear: fy } })
+  const invoiceNumber = String(count + 1).padStart(3, "0")
+
+  const invoice = await prisma.invoice.create({
+    data: {
+      invoiceNumber,
+      financialYear: fy,
+      invoiceDate: invoiceDateObj,
+      customerId,
+      basicAmount,
+      cgst,
+      sgst,
+      igst,
+      totalAmount,
+    },
+  })
+
+  await prisma.productionEntry.updateMany({
+    where: { id: { in: productionEntryIds } },
+    data: { invoiceId: invoice.id },
+  })
+
+  revalidatePath("/admin/production")
+  revalidatePath("/admin/invoices")
+  return invoice
+}
+
+export async function recordPayment(data: {
+  customerId: string
+  amount: number
+  paymentDate: string
+  reference?: string
+  notes?: string
+  allocations: { invoiceId: string; amount: number }[]
+}) {
+  const { customerId, amount, paymentDate, reference, notes, allocations } = data
+
+  await prisma.payment.create({
+    data: {
+      customerId,
+      amount,
+      paymentDate: new Date(paymentDate),
+      reference: reference || null,
+      notes: notes || null,
+      allocations: {
+        create: allocations.map((a) => ({
+          invoiceId: a.invoiceId,
+          amount: a.amount,
+        })),
+      },
+    },
+  })
+
+  revalidatePath("/admin/invoices")
+}
+
+export async function getInvoiceWithPayments(id: string) {
+  const invoice = await prisma.invoice.findUniqueOrThrow({
+    where: { id },
+    include: {
+      customer: true,
+      lineItems: {
+        orderBy: { chromePlatingDate: "asc" },
+        include: { dc: { select: { dcNumber: true, financialYear: true } } },
+      },
+      payments: {
+        include: {
+          payment: true,
+        },
+        orderBy: { payment: { paymentDate: "asc" } },
+      },
+    },
+  })
+
+  const paid = invoice.payments.reduce((sum, a) => sum + a.amount, 0)
+  const balance = parseFloat((invoice.totalAmount - paid).toFixed(2))
+  const status: "UNPAID" | "PARTIAL" | "PAID" =
+    paid === 0 ? "UNPAID" : balance <= 0 ? "PAID" : "PARTIAL"
+
+  return { ...invoice, paid, balance, status }
+}
+
+export async function getInvoicesByMonth(year: number, month: number) {
+  const start = new Date(year, month - 1, 1)
+  const end = new Date(year, month, 0, 23, 59, 59)
+
+  const invoices = await prisma.invoice.findMany({
+    where: { invoiceDate: { gte: start, lte: end } },
+    include: {
+      customer: true,
+      _count: { select: { lineItems: true } },
+      payments: true,
+    },
+    orderBy: [{ invoiceDate: "asc" }, { invoiceNumber: "asc" }],
+  })
+
+  return invoices.map((inv) => {
+    const paid = inv.payments.reduce((sum, a) => sum + a.amount, 0)
+    const balance = parseFloat((inv.totalAmount - paid).toFixed(2))
+    const status: "UNPAID" | "PARTIAL" | "PAID" =
+      paid === 0 ? "UNPAID" : balance <= 0 ? "PAID" : "PARTIAL"
+    return { ...inv, qty: inv._count.lineItems, paid, balance, status }
+  })
+}
+
+export async function getOutstandingInvoices(customerId?: string) {
+  const invoices = await prisma.invoice.findMany({
+    where: customerId ? { customerId } : {},
+    include: {
+      customer: true,
+      payments: true,
+    },
+    orderBy: [{ invoiceDate: "asc" }],
+  })
+
+  return invoices
+    .map((inv) => {
+      const paid = inv.payments.reduce((sum, a) => sum + a.amount, 0)
+      const balance = parseFloat((inv.totalAmount - paid).toFixed(2))
+      const status: "UNPAID" | "PARTIAL" | "PAID" =
+        paid === 0 ? "UNPAID" : balance <= 0 ? "PAID" : "PARTIAL"
+      return { ...inv, paid, balance, status }
+    })
+    .filter((inv) => inv.balance > 0)
+}
+
+export async function saveInvoicePrintParams(id: string, params: {
+  poNo?: string
+  vehicleNo?: string
+  hsn?: string
+  reverseCharge?: string
+}) {
+  await prisma.invoice.update({
+    where: { id },
+    data: {
+      lastPoNo: params.poNo || null,
+      lastVehicleNo: params.vehicleNo || null,
+      lastHsn: params.hsn || null,
+      lastReverseCharge: params.reverseCharge || null,
+    },
+  })
+}
+
+export async function getCustomerLedger(customerId: string) {
+  const [invoices, unbilledEntries] = await Promise.all([
+    prisma.invoice.findMany({
+      where: { customerId },
+      include: { payments: true },
+      orderBy: { invoiceDate: "asc" },
+    }),
+    prisma.productionEntry.findMany({
+      where: { customerId, invoiceId: null, status: { not: "FAILED" } },
+      select: { totalCost: true },
+    }),
+  ])
+
+  const totalBilled = invoices.reduce((s, inv) => s + inv.totalAmount, 0)
+  const totalPaid = invoices.reduce(
+    (s, inv) => s + inv.payments.reduce((ps, a) => ps + a.amount, 0),
+    0
+  )
+  const receivables = parseFloat((totalBilled - totalPaid).toFixed(2))
+  const unbilled = parseFloat(
+    unbilledEntries.reduce((s, e) => s + e.totalCost, 0).toFixed(2)
+  )
+
+  return { totalBilled, totalPaid, receivables, unbilled, totalExposure: receivables + unbilled }
+}

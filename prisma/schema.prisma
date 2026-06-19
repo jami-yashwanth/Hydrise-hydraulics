@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TaxType {
+  INTRASTATE
+  INTERSTATE
+  EXEMPT
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  gstin       String?
+  address     String?
+  stateCode   String?
+  taxType     TaxType  @default(INTRASTATE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  productions ProductionEntry[]
+  dcs         DC[]
+  invoices    Invoice[]
+  payments    Payment[]
+}
+
+model Employee {
+  id          String   @id @default(cuid())
+  name        String
+  designation String?
+  phone       String?
+  address     String?
+  aadhar      String?
+  fatherName  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  productions ProductionEntry[]
+}
+
+enum EntryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model DC {
+  id            String           @id @default(cuid())
+  dcNumber      String
+  financialYear String
+  dcDate        DateTime
+  customerId    String
+  customer      Customer         @relation(fields: [customerId], references: [id])
+  entries       ProductionEntry[]
+  createdAt     DateTime         @default(now())
+
+  lastOrderNo   String?
+  lastOrderDate String?
+  lastVehicleNo String?
+
+  @@unique([dcNumber, financialYear])
+  @@index([customerId])
+}
+
+model ProductionEntry {
+  id                     String      @id @default(cuid())
+  chromePlatingDate      DateTime
+
+  customerDcNo           String?
+  customerDcDate         DateTime?
+
+  dcId                   String?
+  dc                     DC?         @relation(fields: [dcId], references: [id])
+
+  customerId             String
+  customer               Customer    @relation(fields: [customerId], references: [id])
+
+  employeeId             String?
+  employee               Employee?   @relation(fields: [employeeId], references: [id])
+
+  rodDiaMm               Float
+  rodLengthMm            Float
+  chromePlatingMicrons   Float       @default(30)
+  area                   Float
+  costPerSqIn            Float       @default(0)
+  totalCost              Float       @default(0)
+  quantity               Int         @default(1)
+  jobType                String?
+  description            String?
+  additionalRequirements String?
+
+  inTime                 String?
+  outTime                String?
+  temperature            Float?
+  density                Float?
+  cathodeCurrent         Float?
+  anodeCurrent           Float?
+  currentReading         String?
+  chromeThickness        String?
+
+  remarks                String?
+  status                 EntryStatus @default(PENDING)
+
+  // Redo chain — each entry can have at most one direct redo
+  redoOfId               String?     @unique
+  redoOf                 ProductionEntry?  @relation("Redo", fields: [redoOfId], references: [id])
+  redo                   ProductionEntry?  @relation("Redo")
+
+  invoiceId              String?
+  invoice                Invoice?    @relation(fields: [invoiceId], references: [id])
+
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+
+  @@index([chromePlatingDate])
+  @@index([customerId])
+  @@index([status])
+  @@index([invoiceId])
+  @@index([dcId])
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String
+  financialYear String
+  invoiceDate   DateTime
+
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+
+  basicAmount   Float
+  cgst          Float    @default(0)
+  sgst          Float    @default(0)
+  igst          Float    @default(0)
+  totalAmount   Float
+
+  remarks       String?
+
+  lastPoNo           String?
+  lastVehicleNo      String?
+  lastHsn            String?
+  lastReverseCharge  String?
+
+  lineItems     ProductionEntry[]
+  payments      PaymentAllocation[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([invoiceNumber, financialYear])
+  @@index([customerId])
+  @@index([invoiceDate])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+
+  amount      Float
+  paymentDate DateTime
+  reference   String?
+  notes       String?
+
+  allocations PaymentAllocation[]
+
+  createdAt   DateTime @default(now())
+
+  @@index([customerId])
+}
+
+model PaymentAllocation {
+  id        String  @id @default(cuid())
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+  amount    Float
+
+  @@unique([paymentId, invoiceId])
+}
