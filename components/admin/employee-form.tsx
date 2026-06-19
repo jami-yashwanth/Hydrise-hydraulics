@@ -1,6 +1,9 @@
+"use client"
+
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { SubmitButton } from "@/components/ui/submit-button"
 import Link from "next/link"
 
 interface Props {
@@ -43,7 +46,7 @@ export function EmployeeForm({ action, defaultValues }: Props) {
         />
       </div>
       <div className="flex gap-3 pt-2">
-        <Button type="submit">{defaultValues ? "Save changes" : "Add Employee"}</Button>
+        <SubmitButton>{defaultValues ? "Save changes" : "Add Employee"}</SubmitButton>
         <Button variant="outline" asChild><Link href="/admin/employees">Cancel</Link></Button>
       </div>
     </form>

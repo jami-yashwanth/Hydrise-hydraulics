@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { SubmitButton } from "@/components/ui/submit-button"
 import {
   Select,
   SelectContent,
@@ -366,7 +367,7 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
 
       {!locked && (
         <div className="flex gap-3">
-          <Button type="submit">{defaultValues ? "Save changes" : "Create Entry"}</Button>
+          <SubmitButton>{defaultValues ? "Save changes" : "Create Entry"}</SubmitButton>
           <Button variant="outline" asChild><Link href="/admin/production">Cancel</Link></Button>
         </div>
       )}
