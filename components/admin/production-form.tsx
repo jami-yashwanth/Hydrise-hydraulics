@@ -72,7 +72,7 @@ function fmtDate(d?: Date | null) {
 export function ProductionForm({ action, customers, employees, defaultValues, isInvoiced }: Props) {
   const [dia, setDia] = useState(defaultValues?.rodDiaMm?.toString() ?? "")
   const [length, setLength] = useState(defaultValues?.rodLengthMm?.toString() ?? "")
-  const [rate, setRate] = useState(defaultValues?.costPerSqIn?.toString() ?? "")
+  const [rate, setRate] = useState(defaultValues?.costPerSqIn?.toString() ?? "8")
   const [totalCost, setTotalCost] = useState(defaultValues?.totalCost?.toString() ?? "")
   const [totalCostEdited, setTotalCostEdited] = useState(false)
   const [description, setDescription] = useState(defaultValues?.description ?? "")
@@ -83,7 +83,6 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
 
   const area = calcArea(parseFloat(dia) || 0, parseFloat(length) || 0)
 
-  // Auto-recalculate total cost when area or rate changes, unless user has manually edited it
   useEffect(() => {
     if (!totalCostEdited && status !== "FAILED") {
       const computed = area * (parseFloat(rate) || 0)
@@ -94,7 +93,6 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
     }
   }, [area, rate, status, totalCostEdited])
 
-  // Auto-generate description from dia × length unless user has manually edited it
   useEffect(() => {
     if (descriptionEdited) return
     const d = parseFloat(dia) || 0
@@ -109,8 +107,12 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
 
   const locked = !!isInvoiced
 
+  const field = "space-y-1"
+  const card = "bg-white border rounded-lg p-4 space-y-3"
+  const sectionTitle = "font-medium text-xs text-muted-foreground uppercase tracking-wide"
+
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} className="space-y-4 max-w-2xl">
       {/* Hidden fields */}
       <input type="hidden" name="area" value={area} />
       <input type="hidden" name="status" value={status} />
@@ -119,10 +121,10 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
       <input type="hidden" name="totalCost" value={totalCost} />
 
       {/* Document Info */}
-      <div className="bg-white border rounded-lg p-5 space-y-4">
-        <h2 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Document Details</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
+      <div className={card}>
+        <h2 className={sectionTitle}>Document Details</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <div className={field}>
             <Label>Chrome Plating Date <span className="text-destructive">*</span></Label>
             <DatePicker
               name="chromePlatingDate"
@@ -132,11 +134,11 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
             />
           </div>
           <div />
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Customer DC No.</Label>
             <Input name="customerDcNo" defaultValue={defaultValues?.customerDcNo ?? ""} disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Customer DC Date</Label>
             <DatePicker
               name="customerDcDate"
@@ -146,7 +148,7 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
             />
           </div>
           {defaultValues?.dc && (
-            <div className="col-span-2 flex items-center gap-2 py-1">
+            <div className="col-span-2 flex items-center gap-2">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Hydrise DC</span>
               <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 border border-blue-200">
                 #{defaultValues.dc.dcNumber} / {defaultValues.dc.financialYear}
@@ -157,10 +159,10 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
       </div>
 
       {/* Customer & Operator */}
-      <div className="bg-white border rounded-lg p-5 space-y-4">
-        <h2 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Customer & Operator</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
+      <div className={card}>
+        <h2 className={sectionTitle}>Customer & Operator</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <div className={field}>
             <Label>Customer <span className="text-destructive">*</span></Label>
             <Select value={customerId} onValueChange={setCustomerId} required disabled={locked}>
               <SelectTrigger>
@@ -173,7 +175,7 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Operator</Label>
             <Select value={employeeId || "none"} onValueChange={(v) => setEmployeeId(v === "none" ? "" : v)} disabled={locked}>
               <SelectTrigger>
@@ -191,10 +193,10 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
       </div>
 
       {/* Rod & Costing */}
-      <div className="bg-white border rounded-lg p-5 space-y-4">
-        <h2 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Rod & Cost</h2>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-          <div className="space-y-1.5">
+      <div className={card}>
+        <h2 className={sectionTitle}>Rod & Cost</h2>
+        <div className="grid grid-cols-3 gap-3">
+          <div className={field}>
             <Label>Rod Dia (mm) <span className="text-destructive">*</span></Label>
             <Input
               name="rodDiaMm"
@@ -206,7 +208,7 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
               disabled={locked}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Rod Length (mm) <span className="text-destructive">*</span></Label>
             <Input
               name="rodLengthMm"
@@ -218,15 +220,15 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
               disabled={locked}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Chrome Plating (Microns)</Label>
             <Input name="chromePlatingMicrons" type="number" step="any" defaultValue={defaultValues?.chromePlatingMicrons ?? 30} disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Area (sq in)</Label>
             <Input value={area > 0 ? area.toFixed(2) : ""} readOnly className="bg-gray-50 text-muted-foreground" disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Cost per In² / 30 Microns</Label>
             <Input
               name="costPerSqIn"
@@ -237,7 +239,7 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
               disabled={locked}
             />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Total Cost</Label>
             <Input
               type="number"
@@ -249,104 +251,97 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
             />
           </div>
         </div>
-        <div className="space-y-1.5">
-          <Label>Additional Requirements</Label>
-          <Input name="additionalRequirements" defaultValue={defaultValues?.additionalRequirements ?? ""} placeholder="e.g. 60 MICRONS" disabled={locked} />
-        </div>
       </div>
 
-       {/* Job Type & Description */}
-      <div className="bg-white border rounded-lg p-5 space-y-4">
-        <h2 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Job Details</h2>
-        <div className="grid grid-cols-1 gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="jobType">Job Type <span className="text-destructive">*</span></Label>
-              <Input id="jobType" name="jobType" defaultValue={defaultValues?.jobType ?? ""} required disabled={locked} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                name="quantity"
-                type="number"
-                min={1}
-                step={1}
-                defaultValue={defaultValues?.quantity ?? 1}
-                disabled={locked}
-              />
-            </div>
+      {/* Job Type & Description */}
+      <div className={card}>
+        <h2 className={sectionTitle}>Job Details</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <div className={field}>
+            <Label htmlFor="jobType">Job Type <span className="text-destructive">*</span></Label>
+            <Input id="jobType" name="jobType" defaultValue={defaultValues?.jobType ?? "Job work - Piston rod"} required disabled={locked} />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="jobDescription">Description <span className="text-destructive">*</span></Label>
-            <Textarea
-              id="jobDescription"
-              name="description"
-              value={description}
-              onChange={(e) => { setDescription(e.target.value); setDescriptionEdited(true) }}
-              required
+          <div className={field}>
+            <Label htmlFor="quantity">Quantity</Label>
+            <Input
+              id="quantity"
+              name="quantity"
+              type="number"
+              min={1}
+              step={1}
+              defaultValue={defaultValues?.quantity ?? 1}
               disabled={locked}
-              rows={3}
             />
           </div>
         </div>
+        <div className={field}>
+          <Label htmlFor="jobDescription">Description <span className="text-destructive">*</span></Label>
+          <Textarea
+            id="jobDescription"
+            name="description"
+            value={description}
+            onChange={(e) => { setDescription(e.target.value); setDescriptionEdited(true) }}
+            required
+            disabled={locked}
+            rows={2}
+          />
+        </div>
       </div>
 
-
       {/* Process Parameters */}
-      <div className="bg-white border rounded-lg p-5 space-y-4">
-        <h2 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Process Parameters</h2>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <div className="space-y-1.5">
+      <div className={card}>
+        <h2 className={sectionTitle}>Process Parameters</h2>
+        <div className="grid grid-cols-4 gap-3">
+          <div className={field}>
             <Label>In Time</Label>
             <Input name="inTime" type="time" defaultValue={defaultValues?.inTime ?? ""} disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Out Time</Label>
             <Input name="outTime" type="time" defaultValue={defaultValues?.outTime ?? ""} disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Temperature</Label>
             <Input name="temperature" type="number" step="any" defaultValue={defaultValues?.temperature ?? ""} disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Density</Label>
             <Input name="density" type="number" step="any" defaultValue={defaultValues?.density ?? ""} disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Cathode Current</Label>
             <Input name="cathodeCurrent" type="number" step="any" defaultValue={defaultValues?.cathodeCurrent ?? ""} disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Anode Current</Label>
             <Input name="anodeCurrent" type="number" step="any" defaultValue={defaultValues?.anodeCurrent ?? ""} disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Current Reading</Label>
             <Input name="currentReading" defaultValue={defaultValues?.currentReading ?? ""} placeholder="e.g. 2-2" disabled={locked} />
           </div>
-          <div className="space-y-1.5">
+          <div className={field}>
             <Label>Chrome Thickness</Label>
             <Input name="chromeThickness" defaultValue={defaultValues?.chromeThickness ?? ""} placeholder="e.g. 45-60" disabled={locked} />
           </div>
         </div>
-        <div className="space-y-1.5">
+        <div className={field}>
           <Label>Remarks</Label>
           <Input name="remarks" defaultValue={defaultValues?.remarks ?? ""} disabled={locked} />
         </div>
       </div>
 
       {/* Status */}
-      <div className="bg-white border rounded-lg p-5 space-y-3">
-        <h2 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Status</h2>
-        <div className="flex gap-3">
+      <div className={card}>
+        <h2 className={sectionTitle}>Status</h2>
+        <div className="flex gap-2">
           {(["PENDING", "SUCCESS", "FAILED"] as const).map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => !locked && setStatus(s)}
               disabled={locked}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 status === s
                   ? s === "SUCCESS"
                     ? "bg-green-100 border-green-400 text-green-800"
@@ -366,7 +361,7 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
       </div>
 
       {!locked && (
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <SubmitButton>{defaultValues ? "Save changes" : "Create Entry"}</SubmitButton>
           <Button variant="outline" asChild><Link href="/admin/production">Cancel</Link></Button>
         </div>

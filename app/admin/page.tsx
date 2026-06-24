@@ -1,25 +1,26 @@
+import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, UserCog, ClipboardList, CheckCircle2, Clock, XCircle } from "lucide-react"
-import { startOfMonth, endOfMonth } from "date-fns"
 import { FinancialCards, type InvoiceRow, type UnbilledCustomerRow } from "@/components/admin/financial-cards"
+import { getCurrentFY, parseFY } from "@/lib/fy"
 
 export default async function AdminDashboard() {
-  const now = new Date()
-  const monthStart = startOfMonth(now)
-  const monthEnd = endOfMonth(now)
+  const cookieStore = await cookies()
+  const selectedFY = cookieStore.get("fy")?.value ?? getCurrentFY()
+  const { start: fyStart, end: fyEnd } = parseFY(selectedFY)
 
   const [
     customers,
     employees,
     totalProduction,
-    monthProduction,
+    fyProduction,
     statusCounts,
-    monthInvoiceAgg,
+    fyInvoiceAgg,
     totalInvoiced,
     totalPaid,
     unbilledAmount,
-    monthInvoiceDetails,
+    fyInvoiceDetails,
     allInvoiceDetails,
     unbilledEntries,
   ] = await Promise.all([
@@ -27,15 +28,15 @@ export default async function AdminDashboard() {
     prisma.employee.count(),
     prisma.productionEntry.count(),
     prisma.productionEntry.count({
-      where: { chromePlatingDate: { gte: monthStart, lte: monthEnd } },
+      where: { chromePlatingDate: { gte: fyStart, lte: fyEnd } },
     }),
     prisma.productionEntry.groupBy({
       by: ["status"],
       _count: true,
-      where: { chromePlatingDate: { gte: monthStart, lte: monthEnd } },
+      where: { chromePlatingDate: { gte: fyStart, lte: fyEnd } },
     }),
     prisma.invoice.aggregate({
-      where: { invoiceDate: { gte: monthStart, lte: monthEnd } },
+      where: { invoiceDate: { gte: fyStart, lte: fyEnd } },
       _sum: { totalAmount: true },
       _count: true,
     }),
@@ -46,7 +47,7 @@ export default async function AdminDashboard() {
       _sum: { totalCost: true },
     }),
     prisma.invoice.findMany({
-      where: { invoiceDate: { gte: monthStart, lte: monthEnd } },
+      where: { invoiceDate: { gte: fyStart, lte: fyEnd } },
       include: { customer: { select: { name: true } }, payments: true },
       orderBy: { invoiceNumber: "asc" },
     }),
@@ -64,17 +65,15 @@ export default async function AdminDashboard() {
   const pendingCount = statusCounts.find((s) => s.status === "PENDING")?._count ?? 0
   const failedCount = statusCounts.find((s) => s.status === "FAILED")?._count ?? 0
 
-  const monthBilled = monthInvoiceAgg._sum.totalAmount ?? 0
-  const monthInvoiceCount = monthInvoiceAgg._count
+  const fyBilled = fyInvoiceAgg._sum.totalAmount ?? 0
+  const fyInvoiceCount = fyInvoiceAgg._count
   const receivables = Math.max(
     0,
     (totalInvoiced._sum.totalAmount ?? 0) - (totalPaid._sum.amount ?? 0)
   )
   const unbilled = unbilledAmount._sum.totalCost ?? 0
 
-  const monthName = now.toLocaleString("default", { month: "long", year: "numeric" })
-
-  const toInvoiceRow = (inv: typeof monthInvoiceDetails[0]): InvoiceRow => {
+  const toInvoiceRow = (inv: typeof fyInvoiceDetails[0]): InvoiceRow => {
     const paid = inv.payments.reduce((s, a) => s + a.amount, 0)
     const balance = parseFloat((inv.totalAmount - paid).toFixed(2))
     const status: InvoiceRow["status"] =
@@ -92,7 +91,7 @@ export default async function AdminDashboard() {
     }
   }
 
-  const monthInvoiceRows = monthInvoiceDetails.map(toInvoiceRow)
+  const fyInvoiceRows = fyInvoiceDetails.map(toInvoiceRow)
   const outstandingRows = allInvoiceDetails.map(toInvoiceRow).filter((r) => r.balance > 0)
 
   const customerMap = new Map<string, { customerName: string; count: number; total: number }>()
@@ -113,7 +112,7 @@ export default async function AdminDashboard() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">{monthName}</p>
+        <p className="text-sm text-muted-foreground">FY {selectedFY}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -139,18 +138,18 @@ export default async function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">This FY</CardTitle>
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{monthProduction}</p>
+            <p className="text-2xl font-bold">{fyProduction}</p>
             <p className="text-xs text-muted-foreground">{totalProduction} total</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">This Month Status</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">This FY Status</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">
             <div className="flex items-center gap-2 text-sm">
@@ -170,11 +169,12 @@ export default async function AdminDashboard() {
       </div>
 
       <FinancialCards
-        monthBilled={monthBilled}
-        monthInvoiceCount={monthInvoiceCount}
+        periodLabel={`FY ${selectedFY}`}
+        monthBilled={fyBilled}
+        monthInvoiceCount={fyInvoiceCount}
         receivables={receivables}
         unbilled={unbilled}
-        monthInvoices={monthInvoiceRows}
+        monthInvoices={fyInvoiceRows}
         outstandingInvoices={outstandingRows}
         unbilledByCustomer={unbilledByCustomer}
       />

@@ -5,7 +5,7 @@ import { Plus, Pencil } from "lucide-react"
 import { DeleteEmployeeButton } from "@/components/admin/delete-employee-button"
 
 export default async function EmployeesPage() {
-  const employees = await prisma.employee.findMany({ orderBy: { name: "asc" } })
+  const employees = await prisma.employee.findMany({ orderBy: { createdAt: "asc" } })
 
   return (
     <div className="p-6 space-y-4">

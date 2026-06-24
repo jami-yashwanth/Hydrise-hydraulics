@@ -118,6 +118,15 @@ export async function updateProductionEntry(id: string, formData: FormData) {
   redirect("/admin/production")
 }
 
+export async function deleteProductionEntry(id: string) {
+  const entry = await prisma.productionEntry.findUnique({ where: { id }, select: { dcId: true, invoiceId: true } })
+  if (!entry) throw new Error("Entry not found")
+  if (entry.dcId) throw new Error("Cannot delete an entry linked to a DC")
+  if (entry.invoiceId) throw new Error("Cannot delete an invoiced entry")
+  await prisma.productionEntry.delete({ where: { id } })
+  revalidatePath("/admin/production")
+}
+
 export async function createRedoEntry(originalId: string) {
   const original = await prisma.productionEntry.findUnique({ where: { id: originalId } })
   if (!original) throw new Error("Original entry not found")

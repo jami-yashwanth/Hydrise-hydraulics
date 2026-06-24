@@ -5,6 +5,9 @@ import { ArrowLeft, Download } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
 import { DownloadDCDialog } from "@/components/admin/download-dc-dialog"
+import { LinkEntriesToDC } from "@/components/admin/link-entries-to-dc"
+import { DCEntriesTable } from "@/components/admin/dc-entries-table"
+import { DeleteDCButton } from "@/components/admin/delete-dc-button"
 
 export default async function DCDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -14,7 +17,7 @@ export default async function DCDetailPage({ params }: { params: Promise<{ id: s
     include: {
       customer: true,
       entries: {
-        orderBy: { chromePlatingDate: "asc" },
+        orderBy: { createdAt: "asc" },
         select: {
           id: true,
           chromePlatingDate: true,
@@ -22,6 +25,7 @@ export default async function DCDetailPage({ params }: { params: Promise<{ id: s
           rodDiaMm: true,
           rodLengthMm: true,
           area: true,
+          totalCost: true,
           quantity: true,
           jobType: true,
           description: true,
@@ -34,6 +38,30 @@ export default async function DCDetailPage({ params }: { params: Promise<{ id: s
   })
 
   if (!dc) notFound()
+
+  const eligibleEntries = await prisma.productionEntry.findMany({
+    where: {
+      customerId: dc.customerId,
+      dcId: null,
+      invoiceId: null,
+      status: "SUCCESS",
+    },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      chromePlatingDate: true,
+      customerDcNo: true,
+      rodDiaMm: true,
+      rodLengthMm: true,
+      area: true,
+      totalCost: true,
+      description: true,
+      jobType: true,
+      quantity: true,
+      status: true,
+      employee: { select: { name: true } },
+    },
+  })
 
   return (
     <div className="p-6 space-y-5 max-w-4xl">
@@ -50,14 +78,20 @@ export default async function DCDetailPage({ params }: { params: Promise<{ id: s
             {dc.customer.name} · {format(new Date(dc.dcDate), "dd MMMM yyyy")}
           </p>
         </div>
-        <DownloadDCDialog
-          dcId={id}
-          initialValues={{
-            orderNo: dc.lastOrderNo,
-            orderDate: dc.lastOrderDate,
-            vehicleNo: dc.lastVehicleNo,
-          }}
-        />
+        <div className="flex items-center gap-2">
+          {!dc.entries.some((e) => e.invoiceId) && (
+            <DeleteDCButton dcId={id} dcLabel={`#${dc.dcNumber} / ${dc.financialYear}`} />
+          )}
+          <LinkEntriesToDC dcId={id} eligibleEntries={eligibleEntries} />
+          <DownloadDCDialog
+            dcId={id}
+            initialValues={{
+              orderNo: dc.lastOrderNo,
+              orderDate: dc.lastOrderDate,
+              vehicleNo: dc.lastVehicleNo,
+            }}
+          />
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -87,47 +121,11 @@ export default async function DCDetailPage({ params }: { params: Promise<{ id: s
         <div className="px-4 py-3 border-b bg-gray-50">
           <h2 className="font-medium text-sm">Entries ({dc.entries.length} Nos.)</h2>
         </div>
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Sl.</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Date</th>
-              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Description</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Qty</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Cust. DC</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Dia (mm)</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Length (mm)</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Invoice</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {dc.entries.map((e, i) => (
-              <tr key={e.id} className="hover:bg-gray-50">
-                <td className="px-4 py-2.5 text-center text-muted-foreground">{i + 1}</td>
-                <td className="px-4 py-2.5 text-center">{format(new Date(e.chromePlatingDate), "dd.MM.yyyy")}</td>
-                <td className="px-4 py-2.5 text-muted-foreground">
-                  {[e.jobType, e.description].filter(Boolean).join(" — ") || "—"}
-                </td>
-                <td className="px-4 py-2.5 text-center font-medium">{e.quantity}</td>
-                <td className="px-4 py-2.5 text-center text-muted-foreground">{e.customerDcNo ?? "—"}</td>
-                <td className="px-4 py-2.5 text-center">{e.rodDiaMm}</td>
-                <td className="px-4 py-2.5 text-center">{e.rodLengthMm}</td>
-                <td className="px-4 py-2.5 text-center">
-                  {e.invoice ? (
-                    <Link
-                      href={`/admin/invoices/${e.invoiceId}`}
-                      className="text-xs text-blue-600 hover:underline font-mono"
-                    >
-                      #{e.invoice.invoiceNumber}
-                    </Link>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DCEntriesTable
+          dcId={id}
+          entries={dc.entries}
+          customer={{ id: dc.customerId, name: dc.customer.name, taxType: dc.customer.taxType }}
+        />
       </div>
     </div>
   )

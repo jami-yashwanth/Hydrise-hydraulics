@@ -1,18 +1,25 @@
 export const dynamic = "force-dynamic"
 
 import type { ReactNode } from "react"
+import { cookies } from "next/headers"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { SessionProvider } from "@/components/admin/session-provider"
+import { InactivityGuard } from "@/components/admin/inactivity-guard"
+import { getCurrentFY } from "@/lib/fy"
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const cookieStore = await cookies()
+  const selectedFY = cookieStore.get("fy")?.value ?? getCurrentFY()
+
   return (
     <SessionProvider>
       <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar />
+        <AdminSidebar currentFY={selectedFY} />
         <main className="flex-1 overflow-auto">
           {children}
         </main>
       </div>
+      <InactivityGuard />
     </SessionProvider>
   )
 }

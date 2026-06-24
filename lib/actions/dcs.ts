@@ -16,6 +16,95 @@ export async function getNextDCNumber(dcDate: string): Promise<string> {
   return String(count + 1).padStart(3, "0")
 }
 
+export async function unlinkEntryFromDC(entryId: string, dcId: string) {
+  const entry = await prisma.productionEntry.findUnique({
+    where: { id: entryId },
+    select: { dcId: true, invoiceId: true },
+  })
+  if (!entry) throw new Error("Entry not found")
+  if (entry.dcId !== dcId) throw new Error("Entry is not linked to this DC")
+  if (entry.invoiceId) throw new Error("Cannot unlink an invoiced entry")
+  await prisma.productionEntry.update({ where: { id: entryId }, data: { dcId: null } })
+  revalidatePath(`/admin/dcs/${dcId}`)
+  revalidatePath("/admin/production")
+}
+
+export async function linkEntriesToDC(dcId: string, entryIds: string[]) {
+  if (entryIds.length === 0) throw new Error("No entries selected")
+  const entries = await prisma.productionEntry.findMany({
+    where: { id: { in: entryIds }, dcId: null, invoiceId: null, status: "SUCCESS" },
+    select: { id: true },
+  })
+  if (entries.length !== entryIds.length) throw new Error("Some entries are not eligible to link")
+  await prisma.productionEntry.updateMany({
+    where: { id: { in: entryIds } },
+    data: { dcId },
+  })
+  revalidatePath(`/admin/dcs/${dcId}`)
+  revalidatePath("/admin/production")
+}
+
+export async function deleteDC(id: string) {
+  const dc = await prisma.dC.findUnique({
+    where: { id },
+    include: { entries: { select: { id: true, invoiceId: true } } },
+  })
+  if (!dc) throw new Error("DC not found")
+  if (dc.entries.some((e) => e.invoiceId)) throw new Error("Cannot delete a DC with invoiced entries")
+
+  await prisma.productionEntry.updateMany({
+    where: { dcId: id },
+    data: { dcId: null },
+  })
+  await prisma.dC.delete({ where: { id } })
+  revalidatePath("/admin/dcs")
+  revalidatePath("/admin/production")
+}
+
+export async function linkInvoicedEntriesToDC(dcId: string, entryIds: string[]) {
+  if (entryIds.length === 0) throw new Error("No entries selected")
+  const entries = await prisma.productionEntry.findMany({
+    where: { id: { in: entryIds }, dcId: null, status: "SUCCESS" },
+    select: { id: true },
+  })
+  if (entries.length !== entryIds.length) throw new Error("Some entries are already linked to a DC or not eligible")
+  await prisma.productionEntry.updateMany({
+    where: { id: { in: entryIds } },
+    data: { dcId },
+  })
+  revalidatePath("/admin/invoices")
+  revalidatePath("/admin/production")
+  revalidatePath(`/admin/dcs/${dcId}`)
+}
+
+export async function unlinkEntryFromDCForInvoice(entryId: string, dcId: string) {
+  const entry = await prisma.productionEntry.findUnique({
+    where: { id: entryId },
+    select: { dcId: true },
+  })
+  if (!entry) throw new Error("Entry not found")
+  if (entry.dcId !== dcId) throw new Error("Entry is not linked to this DC")
+  await prisma.productionEntry.update({ where: { id: entryId }, data: { dcId: null } })
+  revalidatePath("/admin/invoices")
+  revalidatePath("/admin/production")
+  revalidatePath(`/admin/dcs/${dcId}`)
+}
+
+export async function getEntriesForDCs(dcIds: string[]) {
+  if (dcIds.length === 0) return { entries: [], customer: null }
+  const [entries, dc] = await Promise.all([
+    prisma.productionEntry.findMany({
+      where: { dcId: { in: dcIds }, invoiceId: null },
+      select: { id: true, totalCost: true },
+    }),
+    prisma.dC.findFirst({
+      where: { id: { in: dcIds } },
+      select: { customer: { select: { id: true, name: true, taxType: true } } },
+    }),
+  ])
+  return { entries, customer: dc?.customer ?? null }
+}
+
 export async function saveDCPrintParams(id: string, params: {
   orderNo?: string
   orderDate?: string

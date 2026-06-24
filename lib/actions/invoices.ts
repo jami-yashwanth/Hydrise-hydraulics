@@ -72,6 +72,7 @@ export async function createInvoice(data: {
 
   revalidatePath("/admin/production")
   revalidatePath("/admin/invoices")
+  revalidatePath("/admin/dcs")
   return invoice
 }
 
@@ -141,7 +142,7 @@ export async function getInvoicesByMonth(year: number, month: number) {
       _count: { select: { lineItems: true } },
       payments: true,
     },
-    orderBy: [{ invoiceDate: "asc" }, { invoiceNumber: "asc" }],
+    orderBy: { createdAt: "asc" },
   })
 
   return invoices.map((inv) => {
@@ -160,7 +161,7 @@ export async function getOutstandingInvoices(customerId?: string) {
       customer: true,
       payments: true,
     },
-    orderBy: [{ invoiceDate: "asc" }],
+    orderBy: { createdAt: "asc" },
   })
 
   return invoices
@@ -172,6 +173,32 @@ export async function getOutstandingInvoices(customerId?: string) {
       return { ...inv, paid, balance, status }
     })
     .filter((inv) => inv.balance > 0)
+}
+
+export async function deleteInvoice(id: string) {
+  const invoice = await prisma.invoice.findUnique({
+    where: { id },
+    include: {
+      lineItems: { select: { id: true } },
+      payments: { select: { id: true } },
+    },
+  })
+  if (!invoice) throw new Error("Invoice not found")
+
+  await prisma.$transaction([
+    // Unlink all production entries from this invoice
+    prisma.productionEntry.updateMany({
+      where: { invoiceId: id },
+      data: { invoiceId: null },
+    }),
+    // Remove payment allocations pointing to this invoice
+    prisma.paymentAllocation.deleteMany({ where: { invoiceId: id } }),
+    // Delete the invoice
+    prisma.invoice.delete({ where: { id } }),
+  ])
+
+  revalidatePath("/admin/invoices")
+  revalidatePath("/admin/production")
 }
 
 export async function saveInvoicePrintParams(id: string, params: {
@@ -196,7 +223,7 @@ export async function getCustomerLedger(customerId: string) {
     prisma.invoice.findMany({
       where: { customerId },
       include: { payments: true },
-      orderBy: { invoiceDate: "asc" },
+      orderBy: { createdAt: "asc" },
     }),
     prisma.productionEntry.findMany({
       where: { customerId, invoiceId: null, status: { not: "FAILED" } },

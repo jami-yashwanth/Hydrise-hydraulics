@@ -2,8 +2,12 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { ArrowLeft } from "lucide-react"
+import { prisma } from "@/lib/prisma"
 import { getInvoiceWithPayments } from "@/lib/actions/invoices"
 import { DownloadInvoiceDialog } from "@/components/admin/download-invoice-dialog"
+import { InvoiceLineItems } from "@/components/admin/invoice-line-items"
+import { LinkDCToInvoice } from "@/components/admin/link-dc-to-invoice"
+import { DeleteInvoiceButton } from "@/components/admin/delete-invoice-button"
 
 function fmt(n: number) {
   return Math.round(n).toLocaleString("en-IN")
@@ -33,6 +37,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
     notFound()
   }
 
+  const customerDCs = await prisma.dC.findMany({
+    where: { customerId: invoice.customerId },
+    select: {
+      id: true,
+      dcNumber: true,
+      financialYear: true,
+      dcDate: true,
+      _count: { select: { entries: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+
   const isIntrastate = invoice.cgst > 0 || invoice.sgst > 0
   const isInterstate = invoice.igst > 0
 
@@ -54,6 +70,11 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <DeleteInvoiceButton
+            invoiceId={id}
+            invoiceLabel={`#${invoice.invoiceNumber}/${invoice.financialYear}`}
+            hasPayments={invoice.payments.length > 0}
+          />
           <DownloadInvoiceDialog
             invoiceId={id}
             initialValues={{
@@ -87,37 +108,29 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
       {/* Line items */}
       <div className="bg-white border rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b bg-gray-50">
+        <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
           <h2 className="font-medium text-sm">Line Items ({invoice.lineItems.length} Nos.)</h2>
+          <LinkDCToInvoice
+            unlinkedEntries={invoice.lineItems
+              .filter((item) => !item.dcId)
+              .map((item) => ({ id: item.id }))}
+            customerDCs={customerDCs}
+          />
         </div>
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Date</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Customer DC</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Hydrise DC</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Qty</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Dia (mm)</th>
-              <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Length (mm)</th>
-              <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Amount</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {invoice.lineItems.map((item) => (
-              <tr key={item.id}>
-                <td className="px-4 py-2.5 text-center">{format(new Date(item.chromePlatingDate), "dd.MM.yyyy")}</td>
-                <td className="px-4 py-2.5 text-center text-muted-foreground">{item.customerDcNo ?? "—"}</td>
-                <td className="px-4 py-2.5 text-center text-muted-foreground">
-                  {item.dc ? `#${item.dc.dcNumber}` : "—"}
-                </td>
-                <td className="px-4 py-2.5 text-center font-medium">{item.quantity}</td>
-                <td className="px-4 py-2.5 text-center">{item.rodDiaMm}</td>
-                <td className="px-4 py-2.5 text-center">{item.rodLengthMm}</td>
-                <td className="px-4 py-2.5 text-center font-medium">₹{fmt(item.totalCost)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+        <InvoiceLineItems
+          lineItems={invoice.lineItems.map((item) => ({
+            id: item.id,
+            chromePlatingDate: item.chromePlatingDate,
+            customerDcNo: item.customerDcNo,
+            rodDiaMm: item.rodDiaMm,
+            rodLengthMm: item.rodLengthMm,
+            quantity: item.quantity,
+            totalCost: item.totalCost,
+            dcId: item.dcId,
+            dc: item.dc,
+          }))}
+        />
 
         {/* Tax breakdown */}
         <div className="border-t px-4 py-3 space-y-1.5 text-sm bg-gray-50">
@@ -186,7 +199,6 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           </table>
         )}
       </div>
-
     </div>
   )
 }

@@ -33,6 +33,7 @@ export type UnbilledCustomerRow = {
 }
 
 interface Props {
+  periodLabel: string
   monthBilled: number
   monthInvoiceCount: number
   receivables: number
@@ -88,6 +89,7 @@ function InvoiceList({ invoices }: { invoices: InvoiceRow[] }) {
 }
 
 export function FinancialCards({
+  periodLabel,
   monthBilled,
   monthInvoiceCount,
   receivables,
@@ -105,7 +107,7 @@ export function FinancialCards({
             <Card className="cursor-pointer transition-colors hover:bg-muted/50">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Invoiced This Month
+                  Invoiced {periodLabel}
                 </CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
@@ -119,7 +121,7 @@ export function FinancialCards({
           </SheetTrigger>
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>Invoices This Month</SheetTitle>
+              <SheetTitle>Invoices — {periodLabel}</SheetTitle>
             </SheetHeader>
             <ScrollArea className="flex-1 overflow-y-auto px-4 pb-4">
               <InvoiceList invoices={monthInvoices} />

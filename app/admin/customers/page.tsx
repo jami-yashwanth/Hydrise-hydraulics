@@ -5,7 +5,7 @@ import { Plus, Pencil } from "lucide-react"
 import { DeleteCustomerButton } from "@/components/admin/delete-customer-button"
 
 export default async function CustomersPage() {
-  const customers = await prisma.customer.findMany({ orderBy: { name: "asc" } })
+  const customers = await prisma.customer.findMany({ orderBy: { createdAt: "asc" } })
 
   return (
     <div className="p-6 space-y-4">

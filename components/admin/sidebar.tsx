@@ -1,11 +1,21 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LayoutDashboard, Users, UserCog, ClipboardList, LogOut, FileText, Truck } from "lucide-react"
+import { useTransition } from "react"
+import { LayoutDashboard, Users, UserCog, ClipboardList, LogOut, FileText, Truck, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { setFY } from "@/lib/actions/fy"
+import { getFYList } from "@/lib/fy"
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -16,14 +26,45 @@ const navItems = [
   { href: "/admin/employees", label: "Employees", icon: UserCog },
 ]
 
-export function AdminSidebar() {
+interface Props {
+  currentFY: string
+}
+
+export function AdminSidebar({ currentFY }: Props) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const fyList = getFYList()
+
+  function handleFYChange(fy: string) {
+    startTransition(async () => {
+      await setFY(fy)
+      router.refresh()
+    })
+  }
 
   return (
     <aside className="w-56 border-r bg-white flex flex-col shrink-0">
       <div className="p-4 border-b">
         <p className="text-xs text-muted-foreground uppercase tracking-widest">Hydrise Hydraulics</p>
         <p className="font-semibold text-sm">Admin Portal</p>
+      </div>
+
+      <div className="px-3 py-3 border-b">
+        <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
+          <Calendar className="h-3 w-3" />
+          Financial Year
+        </p>
+        <Select value={currentFY} onValueChange={handleFYChange} disabled={isPending}>
+          <SelectTrigger className="h-8 w-full text-sm font-medium">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {fyList.map((fy) => (
+              <SelectItem key={fy} value={fy}>FY {fy}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <nav className="flex-1 p-3 space-y-1">

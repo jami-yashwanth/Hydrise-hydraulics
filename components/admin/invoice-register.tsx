@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react"
+import { fyMonths } from "@/lib/fy"
 import { useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -49,6 +50,7 @@ interface Props {
   currentMonth: string
   selectedCustomerId: string
   selectedStatus: string
+  currentFY: string
 }
 
 function StatusChip({ status }: { status: "UNPAID" | "PARTIAL" | "PAID" }) {
@@ -83,11 +85,15 @@ function fmt(n: number) {
 
 type OutstandingInvoice = Awaited<ReturnType<typeof getOutstandingInvoices>>[number]
 
-export function InvoiceRegister({ invoices, customers, currentMonth, selectedCustomerId, selectedStatus }: Props) {
+export function InvoiceRegister({ invoices, customers, currentMonth, selectedCustomerId, selectedStatus, currentFY }: Props) {
   const router = useRouter()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [outstandingAll, setOutstandingAll] = useState<OutstandingInvoice[]>([])
   const [isPending, startTransition] = useTransition()
+
+  const fyMonthList = fyMonths(currentFY)
+  const isFirstMonth = fyMonthList[0] === currentMonth
+  const isLastMonth = fyMonthList[fyMonthList.length - 1] === currentMonth
 
   function openOutstanding() {
     startTransition(async () => {
@@ -106,9 +112,8 @@ export function InvoiceRegister({ invoices, customers, currentMonth, selectedCus
   }
 
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId)
-  const filteredInvoices = selectedStatus
-    ? invoices.filter((i) => i.status === selectedStatus)
-    : invoices
+  // invoices are already filtered server-side (by customer + status)
+  const filteredInvoices = invoices
 
   const outstandingInvoices = filteredInvoices
     .filter((i) => i.balance > 0)
@@ -142,16 +147,18 @@ export function InvoiceRegister({ invoices, customers, currentMonth, selectedCus
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate(prevMonth(currentMonth), selectedCustomerId, selectedStatus)}>
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={isFirstMonth} onClick={() => navigate(prevMonth(currentMonth), selectedCustomerId, selectedStatus)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <input
               type="month"
               value={currentMonth}
+              min={fyMonthList[0]}
+              max={fyMonthList[fyMonthList.length - 1]}
               onChange={(e) => navigate(e.target.value, selectedCustomerId, selectedStatus)}
               className="h-8 px-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-ring"
             />
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate(nextMonth(currentMonth), selectedCustomerId, selectedStatus)}>
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={isLastMonth} onClick={() => navigate(nextMonth(currentMonth), selectedCustomerId, selectedStatus)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

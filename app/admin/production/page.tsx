@@ -1,27 +1,34 @@
+import { cookies } from "next/headers"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { format, startOfMonth, endOfMonth } from "date-fns"
 import { ProductionTable } from "@/components/admin/production-table"
+import { getCurrentFY, clampMonthToFY, defaultMonthForFY, parseFY } from "@/lib/fy"
 
 interface Props {
   searchParams: Promise<{ month?: string; customer?: string }>
 }
 
 export default async function ProductionPage({ searchParams }: Props) {
+  const cookieStore = await cookies()
+  const selectedFY = cookieStore.get("fy")?.value ?? getCurrentFY()
+
   const { month: monthQuery, customer: customerQuery } = await searchParams
-  // Default to current month
-  const monthParam = monthQuery ?? format(new Date(), "yyyy-MM")
+  const rawMonth = monthQuery ?? defaultMonthForFY(selectedFY)
+  const monthParam = clampMonthToFY(rawMonth, selectedFY)
+
   const [year, month] = monthParam.split("-").map(Number)
   const monthDate = new Date(year, month - 1, 1)
   const monthStart = startOfMonth(monthDate)
   const monthEnd = endOfMonth(monthDate)
   const selectedCustomerId = customerQuery ?? ""
 
+  const { start: fyStart, end: fyEnd } = parseFY(selectedFY)
+
   const customers = await prisma.customer.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, taxType: true } })
 
-  // Get all entries for the month (will filter to "latest in chain" client-side)
   const allEntries = await prisma.productionEntry.findMany({
     where: {
       chromePlatingDate: { gte: monthStart, lte: monthEnd },
@@ -32,24 +39,19 @@ export default async function ProductionPage({ searchParams }: Props) {
       dc: { select: { dcNumber: true, financialYear: true } },
       invoice: { select: { invoiceNumber: true, financialYear: true } },
     },
-    orderBy: { chromePlatingDate: "asc" },
+    orderBy: { createdAt: "asc" },
   })
 
-  // Find IDs that are pointed to by another entry's redoOfId (i.e., they are "superseded")
   const supersededIds = new Set(
     allEntries.filter((e) => e.redoOfId !== null).map((e) => e.redoOfId as string)
   )
-
-  // Only show entries that are NOT superseded (latest in chain)
   const latestEntries = allEntries.filter((e) => !supersededIds.has(e.id))
 
-  // Assign Sl. No. based on position in overall (unfiltered) latest list
-  const withSlNo = latestEntries.map((e, i) => ({ ...e, slNo: i + 1 }))
+  const filtered = selectedCustomerId
+    ? latestEntries.filter((e) => e.customerId === selectedCustomerId)
+    : latestEntries
 
-  // Apply customer filter for display
-  const displayed = selectedCustomerId
-    ? withSlNo.filter((e) => e.customerId === selectedCustomerId)
-    : withSlNo
+  const displayed = filtered.map((e, i) => ({ ...e, slNo: i + 1 }))
 
   const monthLabel = format(monthDate, "MMMM yyyy")
 
@@ -58,7 +60,7 @@ export default async function ProductionPage({ searchParams }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Production</h1>
-          <p className="text-sm text-muted-foreground">{monthLabel}</p>
+          <p className="text-sm text-muted-foreground">{monthLabel} · FY {selectedFY}</p>
         </div>
         <Button asChild size="sm">
           <Link href="/admin/production/new">
@@ -72,6 +74,7 @@ export default async function ProductionPage({ searchParams }: Props) {
         customers={customers}
         currentMonth={monthParam}
         selectedCustomerId={selectedCustomerId}
+        currentFY={selectedFY}
       />
     </div>
   )
