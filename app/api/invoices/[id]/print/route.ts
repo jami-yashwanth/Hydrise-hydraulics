@@ -93,7 +93,7 @@ export async function GET(
 
   const { customer, lineItems, basicAmount, cgst, sgst, igst, totalAmount, invoiceNumber, financialYear, invoiceDate } = invoice
 
-  const dcNos = [...new Set(lineItems.map((i) => i.dc?.dcNumber).filter(Boolean))].map((n) => `#${n}`).join(", ") || "—"
+  const dcNos = [...new Set(lineItems.map((i) => i.dc?.dcNumber).filter(Boolean))].map((n) => `${n}`).join(", ") || "—"
   const dateStr = format(new Date(invoiceDate), "dd/MM/yyyy")
   const customerStateCode = customer.stateCode || customer.gstin?.slice(0, 2) || ""
 
