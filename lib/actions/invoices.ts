@@ -201,6 +201,25 @@ export async function deleteInvoice(id: string) {
   revalidatePath("/admin/production")
 }
 
+export async function updateInvoice(id: string, data: { invoiceDate: string; remarks?: string }) {
+  const newDate = new Date(data.invoiceDate)
+  const newFY = getFinancialYear(newDate)
+
+  const existing = await prisma.invoice.findUnique({ where: { id }, select: { financialYear: true } })
+  if (!existing) throw new Error("Invoice not found")
+  if (existing.financialYear !== newFY) throw new Error("Cannot change the date to a different financial year")
+
+  await prisma.invoice.update({
+    where: { id },
+    data: {
+      invoiceDate: newDate,
+      remarks: data.remarks?.trim() || null,
+    },
+  })
+  revalidatePath(`/admin/invoices/${id}`)
+  revalidatePath("/admin/invoices")
+}
+
 export async function saveInvoicePrintParams(id: string, params: {
   poNo?: string
   vehicleNo?: string

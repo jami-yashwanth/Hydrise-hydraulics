@@ -120,6 +120,19 @@ export async function saveDCPrintParams(id: string, params: {
   })
 }
 
+export async function updateDC(id: string, data: { dcDate: string }) {
+  const newDate = new Date(data.dcDate)
+  const newFY = getFinancialYear(newDate)
+
+  const existing = await prisma.dC.findUnique({ where: { id }, select: { financialYear: true } })
+  if (!existing) throw new Error("DC not found")
+  if (existing.financialYear !== newFY) throw new Error("Cannot change the date to a different financial year")
+
+  await prisma.dC.update({ where: { id }, data: { dcDate: newDate } })
+  revalidatePath(`/admin/dcs/${id}`)
+  revalidatePath("/admin/dcs")
+}
+
 export async function createDC(data: {
   productionEntryIds: string[]
   customerId: string

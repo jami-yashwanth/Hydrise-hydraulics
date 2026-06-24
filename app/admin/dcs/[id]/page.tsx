@@ -8,6 +8,7 @@ import { DownloadDCDialog } from "@/components/admin/download-dc-dialog"
 import { LinkEntriesToDC } from "@/components/admin/link-entries-to-dc"
 import { DCEntriesTable } from "@/components/admin/dc-entries-table"
 import { DeleteDCButton } from "@/components/admin/delete-dc-button"
+import { EditDCDialog } from "@/components/admin/edit-dc-dialog"
 
 export default async function DCDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -82,6 +83,10 @@ export default async function DCDetailPage({ params }: { params: Promise<{ id: s
           {!dc.entries.some((e) => e.invoiceId) && (
             <DeleteDCButton dcId={id} dcLabel={`#${dc.dcNumber} / ${dc.financialYear}`} />
           )}
+          <EditDCDialog
+            dcId={id}
+            initialDcDate={format(new Date(dc.dcDate), "yyyy-MM-dd")}
+          />
           <LinkEntriesToDC dcId={id} eligibleEntries={eligibleEntries} />
           <DownloadDCDialog
             dcId={id}

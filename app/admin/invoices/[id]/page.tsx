@@ -8,6 +8,7 @@ import { DownloadInvoiceDialog } from "@/components/admin/download-invoice-dialo
 import { InvoiceLineItems } from "@/components/admin/invoice-line-items"
 import { LinkDCToInvoice } from "@/components/admin/link-dc-to-invoice"
 import { DeleteInvoiceButton } from "@/components/admin/delete-invoice-button"
+import { EditInvoiceDialog } from "@/components/admin/edit-invoice-dialog"
 
 function fmt(n: number) {
   return Math.round(n).toLocaleString("en-IN")
@@ -74,6 +75,11 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             invoiceId={id}
             invoiceLabel={`#${invoice.invoiceNumber}/${invoice.financialYear}`}
             hasPayments={invoice.payments.length > 0}
+          />
+          <EditInvoiceDialog
+            invoiceId={id}
+            initialInvoiceDate={format(new Date(invoice.invoiceDate), "yyyy-MM-dd")}
+            initialRemarks={invoice.remarks}
           />
           <DownloadInvoiceDialog
             invoiceId={id}
