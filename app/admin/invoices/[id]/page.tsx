@@ -189,8 +189,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             </thead>
             <tbody className="divide-y">
               {invoice.payments.map((alloc) => (
-                <tr key={alloc.id}>
-                  <td className="px-4 py-2.5">{format(new Date(alloc.payment.paymentDate), "dd.MM.yyyy")}</td>
+                <tr key={alloc.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-2.5">
+                    <Link href={`/admin/payments/${alloc.payment.id}`} className="hover:underline text-blue-600">
+                      {format(new Date(alloc.payment.paymentDate), "dd.MM.yyyy")}
+                    </Link>
+                  </td>
                   <td className="px-4 py-2.5 text-muted-foreground">{alloc.payment.reference ?? "—"}</td>
                   <td className="px-4 py-2.5 text-right font-medium text-green-700">₹{fmt(alloc.amount)}</td>
                 </tr>

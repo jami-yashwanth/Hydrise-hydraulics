@@ -103,6 +103,9 @@ export async function recordPayment(data: {
   })
 
   revalidatePath("/admin/invoices")
+  for (const a of allocations) {
+    revalidatePath(`/admin/invoices/${a.invoiceId}`)
+  }
 }
 
 export async function getInvoiceWithPayments(id: string) {
@@ -126,7 +129,7 @@ export async function getInvoiceWithPayments(id: string) {
   const paid = invoice.payments.reduce((sum, a) => sum + a.amount, 0)
   const balance = parseFloat((invoice.totalAmount - paid).toFixed(2))
   const status: "UNPAID" | "PARTIAL" | "PAID" =
-    paid === 0 ? "UNPAID" : balance <= 0 ? "PAID" : "PARTIAL"
+    Math.round(paid) === 0 ? "UNPAID" : Math.round(balance) <= 0 ? "PAID" : "PARTIAL"
 
   return { ...invoice, paid, balance, status }
 }
@@ -149,7 +152,7 @@ export async function getInvoicesByMonth(year: number, month: number) {
     const paid = inv.payments.reduce((sum, a) => sum + a.amount, 0)
     const balance = parseFloat((inv.totalAmount - paid).toFixed(2))
     const status: "UNPAID" | "PARTIAL" | "PAID" =
-      paid === 0 ? "UNPAID" : balance <= 0 ? "PAID" : "PARTIAL"
+      Math.round(paid) === 0 ? "UNPAID" : Math.round(balance) <= 0 ? "PAID" : "PARTIAL"
     return { ...inv, qty: inv._count.lineItems, paid, balance, status }
   })
 }
@@ -169,10 +172,10 @@ export async function getOutstandingInvoices(customerId?: string) {
       const paid = inv.payments.reduce((sum, a) => sum + a.amount, 0)
       const balance = parseFloat((inv.totalAmount - paid).toFixed(2))
       const status: "UNPAID" | "PARTIAL" | "PAID" =
-        paid === 0 ? "UNPAID" : balance <= 0 ? "PAID" : "PARTIAL"
+        Math.round(paid) === 0 ? "UNPAID" : Math.round(balance) <= 0 ? "PAID" : "PARTIAL"
       return { ...inv, paid, balance, status }
     })
-    .filter((inv) => inv.balance > 0)
+    .filter((inv) => Math.round(inv.balance) > 0)
 }
 
 export async function deleteInvoice(id: string) {
@@ -235,6 +238,134 @@ export async function saveInvoicePrintParams(id: string, params: {
       lastReverseCharge: params.reverseCharge || null,
     },
   })
+}
+
+export async function getPaymentsByMonth(year: number, month: number) {
+  const start = new Date(year, month - 1, 1)
+  const end = new Date(year, month, 0, 23, 59, 59)
+
+  return prisma.payment.findMany({
+    where: { paymentDate: { gte: start, lte: end } },
+    include: {
+      customer: { select: { id: true, name: true } },
+      allocations: {
+        select: {
+          amount: true,
+          invoice: { select: { invoiceNumber: true, financialYear: true } },
+        },
+      },
+    },
+    orderBy: { paymentDate: "asc" },
+  })
+}
+
+export async function getPaymentById(id: string) {
+  return prisma.payment.findUniqueOrThrow({
+    where: { id },
+    include: {
+      customer: { select: { id: true, name: true } },
+      allocations: {
+        include: {
+          invoice: {
+            select: { id: true, invoiceNumber: true, financialYear: true, invoiceDate: true, totalAmount: true },
+          },
+        },
+        orderBy: { invoice: { invoiceDate: "asc" } },
+      },
+    },
+  })
+}
+
+export async function getOutstandingInvoicesForEdit(customerId: string, paymentId: string) {
+  const [existingAllocs, invoices] = await Promise.all([
+    prisma.paymentAllocation.findMany({
+      where: { paymentId },
+      select: { invoiceId: true, amount: true },
+    }),
+    prisma.invoice.findMany({
+      where: { customerId },
+      include: { payments: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ])
+
+  const existingAllocMap = new Map(existingAllocs.map((a) => [a.invoiceId, a.amount]))
+
+  return invoices
+    .map((inv) => {
+      const paid = inv.payments.reduce((s, a) => s + a.amount, 0)
+      const balance = inv.totalAmount - paid
+      const currentAlloc = existingAllocMap.get(inv.id) ?? 0
+      return {
+        id: inv.id,
+        invoiceNumber: inv.invoiceNumber,
+        financialYear: inv.financialYear,
+        invoiceDate: inv.invoiceDate,
+        totalAmount: inv.totalAmount,
+        balance: Math.round(balance + currentAlloc),
+        currentAlloc: Math.round(currentAlloc),
+      }
+    })
+    .filter((inv) => inv.balance > 0)
+}
+
+export async function updatePayment(
+  id: string,
+  data: {
+    paymentDate: string
+    reference?: string
+    notes?: string
+    amount: number
+    allocations: { invoiceId: string; amount: number }[]
+  }
+) {
+  const oldAllocs = await prisma.paymentAllocation.findMany({
+    where: { paymentId: id },
+    select: { invoiceId: true },
+  })
+
+  await prisma.$transaction(async (tx) => {
+    await tx.paymentAllocation.deleteMany({ where: { paymentId: id } })
+    await tx.payment.update({
+      where: { id },
+      data: {
+        amount: data.amount,
+        paymentDate: new Date(data.paymentDate),
+        reference: data.reference || null,
+        notes: data.notes || null,
+        allocations: {
+          create: data.allocations.map((a) => ({ invoiceId: a.invoiceId, amount: a.amount })),
+        },
+      },
+    })
+  })
+
+  const affectedInvoiceIds = new Set([
+    ...oldAllocs.map((a) => a.invoiceId),
+    ...data.allocations.map((a) => a.invoiceId),
+  ])
+
+  revalidatePath("/admin/payments")
+  revalidatePath(`/admin/payments/${id}`)
+  revalidatePath("/admin/invoices")
+  for (const invoiceId of affectedInvoiceIds) {
+    revalidatePath(`/admin/invoices/${invoiceId}`)
+  }
+}
+
+export async function deletePayment(id: string) {
+  const allocs = await prisma.paymentAllocation.findMany({
+    where: { paymentId: id },
+    select: { invoiceId: true },
+  })
+
+  await prisma.payment.delete({ where: { id } })
+
+  revalidatePath("/admin/payments")
+  revalidatePath("/admin/invoices")
+  for (const a of allocs) {
+    revalidatePath(`/admin/invoices/${a.invoiceId}`)
+  }
 }
 
 export async function getCustomerLedger(customerId: string) {

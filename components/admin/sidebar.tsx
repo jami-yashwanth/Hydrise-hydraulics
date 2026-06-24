@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { useTransition } from "react"
-import { LayoutDashboard, Users, UserCog, ClipboardList, LogOut, FileText, Truck, Calendar } from "lucide-react"
+import { LayoutDashboard, Users, UserCog, ClipboardList, LogOut, FileText, Truck, Calendar, Banknote } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +22,7 @@ const navItems = [
   { href: "/admin/production", label: "Production", icon: ClipboardList },
   { href: "/admin/dcs", label: "Delivery Challans", icon: Truck },
   { href: "/admin/invoices", label: "Invoices", icon: FileText },
+  { href: "/admin/payments", label: "Payments", icon: Banknote },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/employees", label: "Employees", icon: UserCog },
 ]
