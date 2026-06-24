@@ -167,7 +167,7 @@ export function InvoiceRegister({ invoices, customers, currentMonth, selectedCus
             value={selectedCustomerId || "all"}
             onValueChange={(v) => navigate(currentMonth, v === "all" ? "" : v, selectedStatus)}
           >
-            <SelectTrigger className="h-8 w-44 text-sm">
+            <SelectTrigger className="h-8 w-auto min-w-[11rem] text-sm">
               <SelectValue placeholder="All Customers" />
             </SelectTrigger>
             <SelectContent>
