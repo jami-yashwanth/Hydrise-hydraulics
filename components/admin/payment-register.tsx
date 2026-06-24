@@ -19,7 +19,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { getOutstandingInvoices, getOutstandingByFY } from "@/lib/actions/invoices"
+import { getOutstandingInvoices } from "@/lib/actions/invoices"
 
 interface Payment {
   id: string
@@ -47,7 +47,6 @@ interface Props {
   currentFY: string
   initialOutstandingTotal: number
   fyTotalReceived: number
-  initialFYOutstandingTotal: number
 }
 
 type OutstandingInvoice = Awaited<ReturnType<typeof getOutstandingInvoices>>[number]
@@ -82,14 +81,11 @@ function nextMonth(m: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
-export function PaymentRegister({ payments, customers, currentMonth, selectedCustomerId, currentFY, initialOutstandingTotal, fyTotalReceived, initialFYOutstandingTotal }: Props) {
+export function PaymentRegister({ payments, customers, currentMonth, selectedCustomerId, currentFY, initialOutstandingTotal, fyTotalReceived }: Props) {
   const router = useRouter()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [outstandingAll, setOutstandingAll] = useState<OutstandingInvoice[]>([])
   const [isPending, startTransition] = useTransition()
-  const [fySheetOpen, setFYSheetOpen] = useState(false)
-  const [fyOutstandingAll, setFYOutstandingAll] = useState<OutstandingInvoice[]>([])
-  const [isFYPending, startFYTransition] = useTransition()
 
   const fyMonthList = fyMonths(currentFY)
   const isFirstMonth = fyMonthList[0] === currentMonth
@@ -110,14 +106,6 @@ export function PaymentRegister({ payments, customers, currentMonth, selectedCus
     })
   }
 
-  function openFYOutstanding() {
-    startFYTransition(async () => {
-      const data = await getOutstandingByFY(currentFY, selectedCustomerId || undefined)
-      setFYOutstandingAll(data)
-      setFYSheetOpen(true)
-    })
-  }
-
   const filtered = selectedCustomerId
     ? payments.filter((p) => p.customer.id === selectedCustomerId)
     : payments
@@ -125,7 +113,6 @@ export function PaymentRegister({ payments, customers, currentMonth, selectedCus
   const totalAmount = filtered.reduce((s, p) => s + p.amount, 0)
 
   const outstandingTotal = outstandingAll.reduce((s, i) => s + i.balance, 0)
-  const fyOutstandingTotal = fyOutstandingAll.reduce((s, i) => s + i.balance, 0)
 
   return (
     <div className="space-y-3">
@@ -199,17 +186,6 @@ export function PaymentRegister({ payments, customers, currentMonth, selectedCus
             </div>
             <ArrowRight className="h-4 w-4 text-red-400 shrink-0" />
           </button>
-          <button
-            onClick={openFYOutstanding}
-            disabled={isFYPending}
-            className="rounded-md border border-orange-200 bg-orange-50 px-3 py-1.5 text-sm leading-none flex items-center gap-2 hover:bg-orange-100 transition-colors disabled:opacity-60"
-          >
-            <div>
-              <p className="text-xs text-orange-400 mb-0.5 text-left">FY {currentFY} Outstanding</p>
-              <p className="font-semibold text-orange-700">{isFYPending ? "…" : `₹${fmt(fyOutstandingAll.length ? fyOutstandingTotal : initialFYOutstandingTotal)}`}</p>
-            </div>
-            <ArrowRight className="h-4 w-4 text-orange-400 shrink-0" />
-          </button>
         </div>
       </div>
 
@@ -269,72 +245,6 @@ export function PaymentRegister({ payments, customers, currentMonth, selectedCus
                       <td className="px-3 py-2.5 text-right">{fmt(outstandingAll.reduce((s, i) => s + i.totalAmount, 0))}</td>
                       <td className="px-3 py-2.5 text-right text-green-700">{fmt(outstandingAll.reduce((s, i) => s + i.paid, 0))}</td>
                       <td className="px-3 py-2.5 text-right text-red-600">{fmt(outstandingTotal)}</td>
-                      <td className="px-3 py-2.5" />
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* FY Outstanding sheet */}
-      <Sheet open={fySheetOpen} onOpenChange={setFYSheetOpen}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>
-              {selectedCustomerId
-                ? `FY ${currentFY} Outstanding — ${customers.find((c) => c.id === selectedCustomerId)?.name}`
-                : `FY ${currentFY} Outstanding Invoices`}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="mt-4">
-            {fyOutstandingAll.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No outstanding invoices for this FY.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm whitespace-nowrap">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Invoice No.</th>
-                      <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Date</th>
-                      {!selectedCustomerId && (
-                        <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Customer</th>
-                      )}
-                      <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Total</th>
-                      <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Received</th>
-                      <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Balance</th>
-                      <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {fyOutstandingAll.map((inv) => (
-                      <tr
-                        key={inv.id}
-                        className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => { setFYSheetOpen(false); router.push(`/admin/invoices/${inv.id}`) }}
-                      >
-                        <td className="px-3 py-2.5 font-mono text-blue-600 font-medium">
-                          {inv.invoiceNumber}/{inv.financialYear}
-                        </td>
-                        <td className="px-3 py-2.5">{format(new Date(inv.invoiceDate), "dd.MM.yyyy")}</td>
-                        {!selectedCustomerId && (
-                          <td className="px-3 py-2.5 font-medium">{inv.customer.name}</td>
-                        )}
-                        <td className="px-3 py-2.5 text-right">{fmt(inv.totalAmount)}</td>
-                        <td className="px-3 py-2.5 text-right text-green-700">{inv.paid > 0 ? fmt(inv.paid) : "—"}</td>
-                        <td className="px-3 py-2.5 text-right font-medium text-red-600">{fmt(inv.balance)}</td>
-                        <td className="px-3 py-2.5"><StatusChip status={inv.status} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot className="bg-gray-50 border-t font-semibold">
-                    <tr>
-                      <td className="px-3 py-2.5" colSpan={!selectedCustomerId ? 3 : 2} />
-                      <td className="px-3 py-2.5 text-right">{fmt(fyOutstandingAll.reduce((s, i) => s + i.totalAmount, 0))}</td>
-                      <td className="px-3 py-2.5 text-right text-green-700">{fmt(fyOutstandingAll.reduce((s, i) => s + i.paid, 0))}</td>
-                      <td className="px-3 py-2.5 text-right text-red-600">{fmt(fyOutstandingTotal)}</td>
                       <td className="px-3 py-2.5" />
                     </tr>
                   </tfoot>

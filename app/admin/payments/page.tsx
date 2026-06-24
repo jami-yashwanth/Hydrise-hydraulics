@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { format } from "date-fns"
 import { prisma } from "@/lib/prisma"
-import { getPaymentsByMonth, getOutstandingInvoices, getPaymentsTotalByFY, getOutstandingByFY } from "@/lib/actions/invoices"
+import { getPaymentsByMonth, getOutstandingInvoices, getPaymentsTotalByFY } from "@/lib/actions/invoices"
 import { PaymentRegister } from "@/components/admin/payment-register"
 import { getCurrentFY, clampMonthToFY, defaultMonthForFY } from "@/lib/fy"
 
@@ -22,16 +22,14 @@ export default async function PaymentsPage({ searchParams }: Props) {
 
   const selectedCustomerId = customerQuery ?? ""
 
-  const [payments, customers, outstanding, fyTotal, fyOutstanding] = await Promise.all([
+  const [payments, customers, outstanding, fyTotal] = await Promise.all([
     getPaymentsByMonth(year, month),
     prisma.customer.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     getOutstandingInvoices(selectedCustomerId || undefined),
     getPaymentsTotalByFY(selectedFY, selectedCustomerId || undefined),
-    getOutstandingByFY(selectedFY, selectedCustomerId || undefined),
   ])
 
   const initialOutstandingTotal = outstanding.reduce((s, i) => s + i.balance, 0)
-  const initialFYOutstandingTotal = fyOutstanding.reduce((s, i) => s + i.balance, 0)
   const monthLabel = format(monthDate, "MMMM yyyy")
 
   return (
@@ -49,7 +47,6 @@ export default async function PaymentsPage({ searchParams }: Props) {
         currentFY={selectedFY}
         initialOutstandingTotal={initialOutstandingTotal}
         fyTotalReceived={fyTotal}
-        initialFYOutstandingTotal={initialFYOutstandingTotal}
       />
     </div>
   )
