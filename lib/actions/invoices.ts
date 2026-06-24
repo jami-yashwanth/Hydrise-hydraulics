@@ -157,6 +157,39 @@ export async function getInvoicesByMonth(year: number, month: number) {
   })
 }
 
+export async function getPaymentsTotalByFY(fy: string, customerId?: string): Promise<number> {
+  const startYear = parseInt(fy.split("-")[0])
+  const start = new Date(startYear, 3, 1)
+  const end = new Date(startYear + 1, 2, 31, 23, 59, 59, 999)
+  const result = await prisma.payment.aggregate({
+    where: {
+      paymentDate: { gte: start, lte: end },
+      ...(customerId ? { customerId } : {}),
+    },
+    _sum: { amount: true },
+  })
+  return result._sum.amount ?? 0
+}
+
+export async function getOutstandingByFY(fy: string, customerId?: string) {
+  const where: { financialYear: string; customerId?: string } = { financialYear: fy }
+  if (customerId) where.customerId = customerId
+  const invoices = await prisma.invoice.findMany({
+    where,
+    include: { customer: true, payments: true },
+    orderBy: { createdAt: "asc" },
+  })
+  return invoices
+    .map((inv) => {
+      const paid = inv.payments.reduce((sum, a) => sum + a.amount, 0)
+      const balance = parseFloat((inv.totalAmount - paid).toFixed(2))
+      const status: "UNPAID" | "PARTIAL" | "PAID" =
+        Math.round(paid) === 0 ? "UNPAID" : Math.round(balance) <= 0 ? "PAID" : "PARTIAL"
+      return { ...inv, paid, balance, status }
+    })
+    .filter((inv) => Math.round(inv.balance) > 0)
+}
+
 export async function getOutstandingInvoices(customerId?: string) {
   const invoices = await prisma.invoice.findMany({
     where: customerId ? { customerId } : {},
