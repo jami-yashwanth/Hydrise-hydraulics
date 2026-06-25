@@ -115,16 +115,6 @@ export function InvoiceRegister({ invoices, customers, currentMonth, selectedCus
   // invoices are already filtered server-side (by customer + status)
   const filteredInvoices = invoices
 
-  const outstandingInvoices = filteredInvoices
-    .filter((i) => i.balance > 0)
-    .map((i) => ({
-      id: i.id,
-      invoiceNumber: i.invoiceNumber,
-      financialYear: i.financialYear,
-      invoiceDate: i.invoiceDate,
-      totalAmount: i.totalAmount,
-      balance: i.balance,
-    }))
 
   // Table/footer totals respect both customer + status filters
   const totalBasic = filteredInvoices.reduce((s, i) => s + i.basicAmount, 0)
@@ -216,11 +206,10 @@ export function InvoiceRegister({ invoices, customers, currentMonth, selectedCus
               )}
             </>
           )}
-          {selectedCustomer && outstandingInvoices.length > 0 && (
+          {selectedCustomer && (
             <RecordPaymentDialog
               customerId={selectedCustomerId}
               customerName={selectedCustomer.name}
-              outstandingInvoices={outstandingInvoices}
             />
           )}
         </div>

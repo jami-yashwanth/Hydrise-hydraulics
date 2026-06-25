@@ -2,10 +2,9 @@
 
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { useState, useTransition } from "react"
-import { fyMonths } from "@/lib/fy"
-import { Button } from "@/components/ui/button"
+import { parseFY } from "@/lib/fy"
 import {
   Select,
   SelectContent,
@@ -42,9 +41,11 @@ interface Customer {
 interface Props {
   payments: Payment[]
   customers: Customer[]
-  currentMonth: string
+  fromDate: string
+  toDate: string
   selectedCustomerId: string
   currentFY: string
+  fyStartDate: string
   initialOutstandingTotal: number
   fyTotalReceived: number
 }
@@ -69,31 +70,19 @@ function StatusChip({ status }: { status: "UNPAID" | "PARTIAL" | "PAID" }) {
   )
 }
 
-function prevMonth(m: string) {
-  const [y, mo] = m.split("-").map(Number)
-  const d = new Date(y, mo - 2, 1)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-}
-
-function nextMonth(m: string) {
-  const [y, mo] = m.split("-").map(Number)
-  const d = new Date(y, mo, 1)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-}
-
-export function PaymentRegister({ payments, customers, currentMonth, selectedCustomerId, currentFY, initialOutstandingTotal, fyTotalReceived }: Props) {
+export function PaymentRegister({ payments, customers, fromDate, toDate, selectedCustomerId, currentFY, fyStartDate, initialOutstandingTotal, fyTotalReceived }: Props) {
   const router = useRouter()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [outstandingAll, setOutstandingAll] = useState<OutstandingInvoice[]>([])
   const [isPending, startTransition] = useTransition()
 
-  const fyMonthList = fyMonths(currentFY)
-  const isFirstMonth = fyMonthList[0] === currentMonth
-  const isLastMonth = fyMonthList[fyMonthList.length - 1] === currentMonth
+  const { end: fyEnd } = parseFY(currentFY)
+  const fyEndStr = format(fyEnd, "yyyy-MM-dd")
 
-  function navigate(month: string, customer: string) {
+  function navigate(from: string, to: string, customer: string) {
     const params = new URLSearchParams()
-    params.set("month", month)
+    params.set("from", from)
+    params.set("to", to)
     if (customer) params.set("customer", customer)
     router.push(`/admin/payments?${params.toString()}`)
   }
@@ -118,39 +107,31 @@ export function PaymentRegister({ payments, customers, currentMonth, selectedCus
     <div className="space-y-3">
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              disabled={isFirstMonth}
-              onClick={() => navigate(prevMonth(currentMonth), selectedCustomerId)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted-foreground">From</label>
             <input
-              type="month"
-              value={currentMonth}
-              min={fyMonthList[0]}
-              max={fyMonthList[fyMonthList.length - 1]}
-              onChange={(e) => navigate(e.target.value, selectedCustomerId)}
+              type="date"
+              value={fromDate ?? ""}
+              min={fyStartDate}
+              max={toDate ?? ""}
+              onChange={(e) => navigate(e.target.value, toDate, selectedCustomerId)}
               className="h-8 px-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-ring"
             />
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              disabled={isLastMonth}
-              onClick={() => navigate(nextMonth(currentMonth), selectedCustomerId)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            <label className="text-xs text-muted-foreground">To</label>
+            <input
+              type="date"
+              value={toDate ?? ""}
+              min={fromDate ?? ""}
+              max={fyEndStr}
+              onChange={(e) => navigate(fromDate, e.target.value, selectedCustomerId)}
+              className="h-8 px-2 text-sm border border-input rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-ring"
+            />
           </div>
 
           <Select
             value={selectedCustomerId || "all"}
-            onValueChange={(v) => navigate(currentMonth, v === "all" ? "" : v)}
+            onValueChange={(v) => navigate(fromDate, toDate, v === "all" ? "" : v)}
           >
             <SelectTrigger className="h-8 w-auto min-w-[11rem] text-sm">
               <SelectValue placeholder="All Customers" />
@@ -167,7 +148,7 @@ export function PaymentRegister({ payments, customers, currentMonth, selectedCus
         <div className="flex items-center gap-2 flex-wrap">
           {filtered.length > 0 && (
             <div className="rounded-md border bg-white px-3 py-1.5 text-sm leading-none">
-              <p className="text-xs text-muted-foreground mb-0.5">Month Received</p>
+              <p className="text-xs text-muted-foreground mb-0.5">Period Received</p>
               <p className="font-semibold text-green-700">₹{fmt(totalAmount)}</p>
             </div>
           )}

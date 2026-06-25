@@ -32,7 +32,7 @@ export default async function DCsPage({ searchParams }: Props) {
       },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.customer.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.customer.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, taxType: true } }),
   ])
 
   const dcs = rawDcs.map((dc) => ({

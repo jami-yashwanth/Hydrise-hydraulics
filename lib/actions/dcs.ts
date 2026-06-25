@@ -133,6 +133,47 @@ export async function updateDC(id: string, data: { dcDate: string }) {
   revalidatePath("/admin/dcs")
 }
 
+export async function getPendingDCsForCustomer(customerId: string) {
+  return prisma.dC.findMany({
+    where: {
+      customerId,
+      entries: { none: { invoiceId: { not: null } } },
+    },
+    select: {
+      id: true,
+      dcNumber: true,
+      financialYear: true,
+      dcDate: true,
+      entries: {
+        select: { id: true, totalCost: true },
+      },
+    },
+    orderBy: { dcDate: "asc" },
+  })
+}
+
+export async function getPendingEntriesForCustomer(customerId: string) {
+  return prisma.productionEntry.findMany({
+    where: {
+      customerId,
+      status: "SUCCESS",
+      dcId: null,
+      invoiceId: null,
+    },
+    select: {
+      id: true,
+      chromePlatingDate: true,
+      customerDcNo: true,
+      rodDiaMm: true,
+      rodLengthMm: true,
+      area: true,
+      totalCost: true,
+      employee: { select: { name: true } },
+    },
+    orderBy: { chromePlatingDate: "asc" },
+  })
+}
+
 export async function createDC(data: {
   productionEntryIds: string[]
   customerId: string

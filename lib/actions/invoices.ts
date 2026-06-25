@@ -273,6 +273,26 @@ export async function getPaymentsByMonth(year: number, month: number) {
   })
 }
 
+export async function getPaymentsByDateRange(from: string, to: string) {
+  const start = new Date(from)
+  const end = new Date(to)
+  end.setHours(23, 59, 59, 999)
+
+  return prisma.payment.findMany({
+    where: { paymentDate: { gte: start, lte: end } },
+    include: {
+      customer: { select: { id: true, name: true } },
+      allocations: {
+        select: {
+          amount: true,
+          invoice: { select: { invoiceNumber: true, financialYear: true } },
+        },
+      },
+    },
+    orderBy: { paymentDate: "asc" },
+  })
+}
+
 export async function getPaymentById(id: string) {
   return prisma.payment.findUniqueOrThrow({
     where: { id },
