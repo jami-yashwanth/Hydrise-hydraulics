@@ -13,9 +13,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <SessionProvider>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex h-screen bg-gray-50">
         <AdminSidebar currentFY={selectedFY} />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>
