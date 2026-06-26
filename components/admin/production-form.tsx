@@ -77,7 +77,7 @@ export function ProductionForm({ action, customers, employees, defaultValues, is
   const [totalCostEdited, setTotalCostEdited] = useState(false)
   const [description, setDescription] = useState(defaultValues?.description ?? "")
   const [descriptionEdited, setDescriptionEdited] = useState(!!defaultValues?.description)
-  const [status, setStatus] = useState<"PENDING" | "SUCCESS" | "FAILED">(defaultValues?.status ?? "PENDING")
+  const [status, setStatus] = useState<"PENDING" | "SUCCESS" | "FAILED">(defaultValues?.status ?? "SUCCESS")
   const [customerId, setCustomerId] = useState(defaultValues?.customerId ?? "")
   const [employeeId, setEmployeeId] = useState(defaultValues?.employeeId ?? "")
 

@@ -157,6 +157,56 @@ export async function getInvoicesByMonth(year: number, month: number) {
   })
 }
 
+export async function getInvoicesByDateRange(from: string, to: string) {
+  const start = new Date(from)
+  const end = new Date(to)
+  end.setHours(23, 59, 59, 999)
+
+  const invoices = await prisma.invoice.findMany({
+    where: { invoiceDate: { gte: start, lte: end } },
+    include: {
+      customer: true,
+      _count: { select: { lineItems: true } },
+      payments: true,
+    },
+    orderBy: { invoiceDate: "asc" },
+  })
+
+  return invoices.map((inv) => {
+    const paid = inv.payments.reduce((sum, a) => sum + a.amount, 0)
+    const balance = parseFloat((inv.totalAmount - paid).toFixed(2))
+    const status: "UNPAID" | "PARTIAL" | "PAID" =
+      Math.round(paid) === 0 ? "UNPAID" : Math.round(balance) <= 0 ? "PAID" : "PARTIAL"
+    return { ...inv, qty: inv._count.lineItems, paid, balance, status }
+  })
+}
+
+export async function getOutstandingByCustomer() {
+  const invoices = await prisma.invoice.findMany({
+    include: { customer: true, payments: true },
+    orderBy: { createdAt: "asc" },
+  })
+
+  const map = new Map<string, { customerId: string; name: string; totalBilled: number; totalPaid: number; balance: number }>()
+
+  for (const inv of invoices) {
+    const paid = inv.payments.reduce((sum, a) => sum + a.amount, 0)
+    const balance = parseFloat((inv.totalAmount - paid).toFixed(2))
+    if (!map.has(inv.customerId)) {
+      map.set(inv.customerId, { customerId: inv.customerId, name: inv.customer.name, totalBilled: 0, totalPaid: 0, balance: 0 })
+    }
+    const entry = map.get(inv.customerId)!
+    entry.totalBilled += inv.totalAmount
+    entry.totalPaid += paid
+    entry.balance += balance
+  }
+
+  return Array.from(map.values())
+    .map((e) => ({ ...e, balance: parseFloat(e.balance.toFixed(2)) }))
+    .filter((e) => Math.round(e.balance) > 0)
+    .sort((a, b) => b.balance - a.balance)
+}
+
 export async function getPaymentsTotalByFY(fy: string, customerId?: string): Promise<number> {
   const startYear = parseInt(fy.split("-")[0])
   const start = new Date(startYear, 3, 1)

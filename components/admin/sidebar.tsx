@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { useTransition } from "react"
-import { LayoutDashboard, Users, UserCog, ClipboardList, LogOut, FileText, Truck, Calendar, Banknote } from "lucide-react"
+import { LayoutDashboard, Users, UserCog, ClipboardList, LogOut, FileText, Truck, Calendar, Banknote, BarChart2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,6 +23,7 @@ const navItems = [
   { href: "/admin/dcs", label: "Delivery Challans", icon: Truck },
   { href: "/admin/invoices", label: "Invoices", icon: FileText },
   { href: "/admin/payments", label: "Payments", icon: Banknote },
+  { href: "/admin/reports", label: "Reports", icon: BarChart2 },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/employees", label: "Employees", icon: UserCog },
 ]
@@ -47,8 +48,8 @@ export function AdminSidebar({ currentFY }: Props) {
   return (
     <aside className="w-56 border-r bg-white flex flex-col shrink-0">
       <div className="p-4 border-b">
-        <p className="text-xs text-muted-foreground uppercase tracking-widest">Hydrise Hydraulics</p>
-        <p className="font-semibold text-sm">Admin Portal</p>
+        <p className="text-sm font-semibold uppercase tracking-widest">Hydrise Hydraulics</p>
+        <p className=" text-xs">Admin Portal</p>
       </div>
 
       <div className="px-3 py-3 border-b">
