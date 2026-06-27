@@ -66,7 +66,7 @@ export function DownloadInvoiceDialog({ invoiceId, initialValues }: Props) {
     <>
       <Button variant="outline" size="sm" onClick={handleOpen}>
         <Download className="h-4 w-4 mr-1.5" />
-        Download PDF
+        Print Invoice
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

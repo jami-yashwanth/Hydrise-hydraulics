@@ -145,7 +145,16 @@ export async function getPendingDCsForCustomer(customerId: string) {
       financialYear: true,
       dcDate: true,
       entries: {
-        select: { id: true, totalCost: true },
+        select: {
+          id: true,
+          totalCost: true,
+          chromePlatingDate: true,
+          customerDcNo: true,
+          rodDiaMm: true,
+          rodLengthMm: true,
+          area: true,
+          description: true,
+        },
       },
     },
     orderBy: { dcDate: "asc" },

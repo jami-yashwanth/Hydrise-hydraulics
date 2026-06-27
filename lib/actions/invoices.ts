@@ -157,6 +157,12 @@ export async function getInvoicesByMonth(year: number, month: number) {
   })
 }
 
+export async function getNextInvoiceNumber(date: string): Promise<string> {
+  const fy = getFinancialYear(new Date(date))
+  const count = await prisma.invoice.count({ where: { financialYear: fy } })
+  return `${String(count + 1).padStart(3, "0")}/${fy}`
+}
+
 export async function getInvoicesByDateRange(from: string, to: string) {
   const start = new Date(from)
   const end = new Date(to)

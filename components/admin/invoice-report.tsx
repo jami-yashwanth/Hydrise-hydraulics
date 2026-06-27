@@ -230,10 +230,19 @@ export function InvoiceReport({
               <p className="font-semibold">₹{fmt(totalAmount)}</p>
             </div>
           )}
-          {/* <Button variant="outline" size="sm" onClick={exportCsv} disabled={invoices.length === 0}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const params = new URLSearchParams({ from, to })
+              if (selectedCustomerId) params.set("customer", selectedCustomerId)
+              if (selectedStatus) params.set("status", selectedStatus)
+              window.open(`/api/reports/print?${params.toString()}`, "_blank")
+            }}
+          >
             <Download className="h-4 w-4 mr-1.5" />
-            Export CSV
-          </Button> */}
+            Download Report
+          </Button>
         </div>
       </div>
 

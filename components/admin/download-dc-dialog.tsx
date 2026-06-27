@@ -59,7 +59,7 @@ export function DownloadDCDialog({ dcId, initialValues }: Props) {
     <>
       <Button variant="outline" size="sm" onClick={handleOpen}>
         <Download className="h-4 w-4 mr-1.5" />
-        Download DC
+        Print DC
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

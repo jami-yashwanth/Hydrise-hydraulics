@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState, useTransition, useEffect } from "react"
+import React, { useState, useTransition } from "react"
 import { format } from "date-fns"
-import { FileText } from "lucide-react"
+import { FileText, ChevronDown, ChevronRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,17 +13,27 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { getPendingDCsForCustomer } from "@/lib/actions/dcs"
-import { createInvoice } from "@/lib/actions/invoices"
+import { createInvoice, getNextInvoiceNumber } from "@/lib/actions/invoices"
 import { GST_CONFIG } from "@/lib/config"
+
+type PendingEntry = {
+  id: string
+  totalCost: number
+  chromePlatingDate: Date
+  customerDcNo: string | null
+  rodDiaMm: number
+  rodLengthMm: number
+  area: number
+  description: string | null
+}
 
 type PendingDC = {
   id: string
   dcNumber: string
   financialYear: string
   dcDate: Date
-  entries: { id: string; totalCost: number }[]
+  entries: PendingEntry[]
 }
 
 interface Props {
@@ -60,19 +70,34 @@ export function CreateInvoiceDialog({ customerId, customerName, customerTaxType 
   const [cgstPct, setCgstPct] = useState(GST_CONFIG.cgstPercent)
   const [sgstPct, setSgstPct] = useState(GST_CONFIG.sgstPercent)
   const [igstPct, setIgstPct] = useState(GST_CONFIG.igstPercent)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState("")
+  const [nextInvoiceNo, setNextInvoiceNo] = useState("")
 
   async function handleOpen() {
     setError("")
     setSelectedIds(new Set())
     setLoading(true)
     setOpen(true)
-    setInvoiceDate(format(new Date(), "yyyy-MM-dd"))
-    const fetched = await getPendingDCsForCustomer(customerId)
+    const today = format(new Date(), "yyyy-MM-dd")
+    setInvoiceDate(today)
+    const [fetched, invoiceNo] = await Promise.all([
+      getPendingDCsForCustomer(customerId),
+      getNextInvoiceNumber(today),
+    ])
     setDcs(fetched)
+    setNextInvoiceNo(invoiceNo)
     setLoading(false)
+  }
+
+  async function handleDateChange(date: string) {
+    setInvoiceDate(date)
+    if (date) {
+      const invoiceNo = await getNextInvoiceNumber(date)
+      setNextInvoiceNo(invoiceNo)
+    }
   }
 
   const grouped = dcs.reduce<Record<string, PendingDC[]>>((acc, dc) => {
@@ -93,6 +118,13 @@ export function CreateInvoiceDialog({ customerId, customerName, customerTaxType 
     if (next.has(id)) next.delete(id)
     else next.add(id)
     setSelectedIds(next)
+  }
+
+  function toggleExpand(id: string) {
+    const next = new Set(expandedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setExpandedIds(next)
   }
 
   const selectedDCs = dcs.filter((dc) => selectedIds.has(dc.id))
@@ -141,7 +173,28 @@ export function CreateInvoiceDialog({ customerId, customerName, customerTaxType 
       >
         <DialogContent className="w-[90vw] !max-w-[90vw] flex flex-col !max-h-[90vh] h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Create Invoice — {customerName}</DialogTitle>
+            <div className="flex items-center  gap-4">
+              <DialogTitle>Create Invoice — {customerName}</DialogTitle>
+              <div className="flex items-center gap-4 shrink-0">
+                {nextInvoiceNo && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-muted-foreground whitespace-nowrap">Invoice No.</label>
+                    <div className="h-8 px-3 flex items-center rounded-md border bg-gray-50 font-mono text-sm font-semibold text-blue-700 select-none">
+                      {nextInvoiceNo}
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-muted-foreground whitespace-nowrap">Invoice Date</label>
+                  <Input
+                    type="date"
+                    value={invoiceDate}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    className="w-36 h-8 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
           </DialogHeader>
 
           {loading ? (
@@ -165,6 +218,7 @@ export function CreateInvoiceDialog({ customerId, customerName, customerTaxType 
                         className="rounded accent-gray-900"
                       />
                     </th>
+                    <th className="px-2 py-2.5 w-6" />
                     <th className="px-3 py-2.5 text-center font-medium text-muted-foreground align-middle">DC No.</th>
                     <th className="px-3 py-2.5 text-center font-medium text-muted-foreground align-middle">FY</th>
                     <th className="px-3 py-2.5 text-center font-medium text-muted-foreground align-middle">Date</th>
@@ -177,7 +231,7 @@ export function CreateInvoiceDialog({ customerId, customerName, customerTaxType 
                     <React.Fragment key={month}>
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={7}
                           className="px-3 py-1.5 bg-gray-100 text-xs font-semibold text-muted-foreground"
                         >
                           {month}
@@ -185,39 +239,71 @@ export function CreateInvoiceDialog({ customerId, customerName, customerTaxType 
                       </tr>
                       {monthDCs.map((dc) => {
                         const dcTotal = dc.entries.reduce((s, e) => s + e.totalCost, 0)
+                        const isExpanded = expandedIds.has(dc.id)
                         return (
-                          <tr
-                            key={dc.id}
-                            className="hover:bg-gray-50 cursor-pointer"
-                            onClick={() => toggleOne(dc.id)}
-                          >
-                            <td
-                              className="px-3 py-2.5 text-center align-middle"
-                              onClick={(ev) => ev.stopPropagation()}
+                          <React.Fragment key={dc.id}>
+                            <tr
+                              className="hover:bg-gray-50 cursor-pointer"
+                              onClick={() => toggleOne(dc.id)}
                             >
-                              <input
-                                type="checkbox"
-                                checked={selectedIds.has(dc.id)}
-                                onChange={() => toggleOne(dc.id)}
-                                className="rounded accent-gray-900"
-                              />
-                            </td>
-                            <td className="px-3 py-2.5 text-center align-middle font-mono font-semibold text-blue-700">
-                              #{dc.dcNumber}
-                            </td>
-                            <td className="px-3 py-2.5 text-center align-middle text-muted-foreground">
-                              {dc.financialYear}
-                            </td>
-                            <td className="px-3 py-2.5 text-center align-middle">
-                              {format(new Date(dc.dcDate), "dd.MM.yyyy")}
-                            </td>
-                            <td className="px-3 py-2.5 text-center align-middle text-muted-foreground">
-                              {dc.entries.length} Nos.
-                            </td>
-                            <td className="px-3 py-2.5 text-center align-middle font-medium">
-                              ₹{Math.round(dcTotal).toLocaleString("en-IN")}
-                            </td>
-                          </tr>
+                              <td
+                                className="px-3 py-2.5 text-center align-middle"
+                                onClick={(ev) => ev.stopPropagation()}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.has(dc.id)}
+                                  onChange={() => toggleOne(dc.id)}
+                                  className="rounded accent-gray-900"
+                                />
+                              </td>
+                              <td
+                                className="px-2 py-2.5 text-center align-middle"
+                                onClick={(ev) => { ev.stopPropagation(); toggleExpand(dc.id) }}
+                              >
+                                {isExpanded
+                                  ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                  : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                                }
+                              </td>
+                              <td className="px-3 py-2.5 text-center align-middle font-mono font-semibold text-blue-700">
+                                #{dc.dcNumber}
+                              </td>
+                              <td className="px-3 py-2.5 text-center align-middle text-muted-foreground">
+                                {dc.financialYear}
+                              </td>
+                              <td className="px-3 py-2.5 text-center align-middle">
+                                {format(new Date(dc.dcDate), "dd.MM.yyyy")}
+                              </td>
+                              <td className="px-3 py-2.5 text-center align-middle text-muted-foreground">
+                                {dc.entries.length} Nos.
+                              </td>
+                              <td className="px-3 py-2.5 text-center align-middle font-medium">
+                                ₹{Math.round(dcTotal).toLocaleString("en-IN")}
+                              </td>
+                            </tr>
+                            {isExpanded && dc.entries.map((entry, idx) => (
+                              <tr key={entry.id} className="bg-blue-50/40 text-xs">
+                                <td className="pl-3 pr-1 py-2 text-center text-muted-foreground">{idx + 1}</td>
+                                <td />
+                                <td className="px-3 py-2 text-muted-foreground" colSpan={2}>
+                                  {format(new Date(entry.chromePlatingDate), "dd.MM.yyyy")}
+                                  {entry.customerDcNo && (
+                                    <span className="ml-2 text-gray-400">· {entry.customerDcNo}</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  ⌀{entry.rodDiaMm} × {entry.rodLengthMm} mm
+                                </td>
+                                <td className="px-3 py-2 text-center text-muted-foreground">
+                                  {entry.area.toFixed(2)} m²
+                                </td>
+                                <td className="px-3 py-2 text-center font-medium text-gray-700">
+                                  ₹{Math.round(entry.totalCost).toLocaleString("en-IN")}
+                                </td>
+                              </tr>
+                            ))}
+                          </React.Fragment>
                         )
                       })}
                     </React.Fragment>
@@ -295,18 +381,6 @@ export function CreateInvoiceDialog({ customerId, customerName, customerTaxType 
                 <div>
                   <span className="text-muted-foreground">Total: </span>
                   <span className="font-semibold text-base">₹{Math.round(tax.total).toLocaleString("en-IN")}</span>
-                </div>
-              </div>
-
-              <div className="flex items-end gap-4">
-                <div className="space-y-1.5">
-                  <Label>Invoice Date</Label>
-                  <Input
-                    type="date"
-                    value={invoiceDate}
-                    onChange={(e) => setInvoiceDate(e.target.value)}
-                    className="w-40"
-                  />
                 </div>
               </div>
 
